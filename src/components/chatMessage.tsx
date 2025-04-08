@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import { cn } from "@/lib/utils"; 
 import ReactMarkdown from 'react-markdown';
@@ -19,6 +19,13 @@ interface ChatMessageProps {
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+
+  // 当思考完成时自动折叠思考内容
+  useEffect(() => {
+    if (message.isThinkingComplete) {
+      setIsThinkingExpanded(false);
+    }
+  }, [message.isThinkingComplete]);
 
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';

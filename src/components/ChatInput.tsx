@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
+  onAbort?: () => void;
   isLoading: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, isLoading }) => {
   const [inputValue, setInputValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -51,13 +52,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }
           rows={1}
           disabled={isLoading}
         />
-        <button
-          type="submit"
-          disabled={isLoading || !inputValue.trim()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-        >
-          {isLoading ? '发送中...' : '发送'}
-        </button>
+        {isLoading && onAbort ? (
+          <button
+            type="button"
+            onClick={onAbort}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          >
+            暂停
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={isLoading || !inputValue.trim()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          >
+            {isLoading ? '发送中...' : '发送'}
+          </button>
+        )}
       </div>
     </form>
   );

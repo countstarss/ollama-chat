@@ -13,6 +13,7 @@ export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mode, setMode] = useState<InteractionMode>("chat");
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const addMessage = useCallback((message: Omit<DisplayMessage, 'id'>) => {
     setMessages((prev) => [...prev, { ...message, id: uuidv4() }]);
@@ -34,10 +35,31 @@ export default function Home() {
       });
   }, []);
 
+  // 中断当前请求
+  const handleAbort = useCallback(() => {
+    if (abortController) {
+      console.log('aborting request...');
+      abortController.abort();
+      setAbortController(null);
+      
+      // 向用户显示请求已中断
+      updateLastMessage(prev => ({
+        mainContent: prev.mainContent + '\n\n[用户已中断回复]',
+        isThinkingComplete: true
+      }));
+      
+      setIsLoading(false);
+    }
+  }, [abortController, updateLastMessage]);
+
   const handleSendMessage = useCallback(async (userInput: string) => {
     const userMessage: DisplayMessage = { id: uuidv4(), role: 'user', content: userInput };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+
+    // 创建新的AbortController
+    const controller = new AbortController();
+    setAbortController(controller);
 
     let requestBody: ApiRequestBody;
     let currentTask: ApiTaskType;
@@ -78,6 +100,7 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
+        signal: controller.signal // 添加AbortController信号
       });
 
       if (!response.ok) {
@@ -238,15 +261,22 @@ export default function Home() {
 
     } catch (error) {
       console.error('Streaming API call failed:', error);
-      updateLastMessage(prev => ({
+      // 检查是否是中断错误
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was aborted');
+        // 已经在handleAbort中更新了消息，这里不需要额外处理
+      } else {
+        updateLastMessage(prev => ({
           role: 'error',
           content: '', // 清空占位符
           mainContent: `流式请求错误: ${error instanceof Error ? error.message : String(error)}`,
           thinkContent: prev.thinkContent, // 保留已接收的思考
           isThinkingComplete: true,
-      }));
+        }));
+      }
     } finally {
       setIsLoading(false);
+      setAbortController(null); // 清除AbortController
     }
   }, [messages, addMessage, updateLastMessage, mode]);
 
@@ -265,7 +295,11 @@ export default function Home() {
 
       <ChatWindow messages={messages} />
 
-      <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+      <ChatInput 
+        onSendMessage={handleSendMessage} 
+        onAbort={handleAbort} 
+        isLoading={isLoading} 
+      />
     </div>
   );
 }
