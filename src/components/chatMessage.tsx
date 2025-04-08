@@ -98,6 +98,3 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     </div>
   );
 };
-
-// --- 需要安装 markdown 和代码高亮库 ---
-// pnpm add react-markdown remark-gfm react-syntax-highlighter

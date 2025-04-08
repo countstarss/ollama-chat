@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useEffect, useRef } from 'react';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
-import { ChatMessage } from './chatMessage';
+import { ChatMessage } from './ChatMessage';
 
 interface ChatWindowProps {
   messages: ChatMessageType[];

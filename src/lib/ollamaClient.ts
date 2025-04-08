@@ -1,15 +1,12 @@
-import { ChatMessage, JsonAnalysisInput, JsonAnalysisResult, ApiTaskType } from './types';
+import { ChatMessage, JsonAnalysisInput, ApiTaskType } from './types';
 
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434/v1/chat/completions';
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'deepseek-r1:7b';
 
-interface OllamaOptions {
-  temperature?: number;
-}
 
 // MARK: - OllamaStream
 export async function OllamaStream(
-  payload: any, // 可能是 ChatMessage[] 或 JsonAnalysisInput
+  payload: ChatMessage[] | JsonAnalysisInput, 
   model: string = DEFAULT_MODEL,
   task: ApiTaskType // 需要知道任务类型来构建 prompt
 ): Promise<ReadableStream<Uint8Array>> {
@@ -19,7 +16,6 @@ export async function OllamaStream(
     // --- 根据任务类型构建不同的消息列表 ---
     if (task === 'analyze_json_add_tags') {
         const inputJson = payload as JsonAnalysisInput;
-        // 再次强调不要输出 think 标签，但准备好前端会处理它
         const systemPrompt = `You are an expert data analyst. Analyze the "content" in the JSON below. Add a "tags" field (JSON array of strings) with relevant keywords/categories. IMPORTANT: You MUST output your reasoning process within <think>...</think> tags FIRST, then output the complete, modified JSON object *immediately* after the closing </think> tag. Do NOT add any other text outside the <think> block or the final JSON object.`;
         const userPrompt = `JSON object:\n\`\`\`json\n${JSON.stringify(inputJson, null, 2)}\n\`\`\`\nOutput format: <think>Your reasoning</think>{ "id": ..., "content": ..., "author": ..., "tags": [...] }`;
         messages = [ { role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }];
@@ -66,8 +62,3 @@ export async function OllamaStream(
         throw error;
     }
 }
-
-// 保留非流式函数（或者让它们内部调用流式并聚合结果）
-// 为了简单，暂时让 API route 直接调用 OllamaStream
-// export async function analyzeJsonAndAddTags(...) { ... }
-// export async function getChatCompletion(...) { ... }

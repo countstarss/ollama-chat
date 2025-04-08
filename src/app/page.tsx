@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ChatWindow } from '@/components/ChatWindow';
 import { ChatInput } from '@/components/ChatInput';
-import { ChatMessage as IChatMessage, ApiRequestBody, ApiTaskType, JsonAnalysisInput, JsonAnalysisResult } from '@/lib/types';
-import { DisplayMessage } from '@/components/chatMessage'; // 导入扩展后的类型
+import { ApiRequestBody, ApiTaskType } from '@/lib/types';
+import { DisplayMessage } from '@/components/ChatMessage'; // 导入扩展后的类型
 import { v4 as uuidv4 } from 'uuid';
 
 type InteractionMode = "chat" | "json_analysis";
@@ -141,7 +141,7 @@ export default function Home() {
             if (dataContent === '[DONE]') {
               console.log("Stream finished [DONE]");
               thinkingDone = true; // 标记思考结束（即使没有</think>）
-              updateLastMessage(prev => ({ isThinkingComplete: thinkingDone }));
+              updateLastMessage(_ => ({ isThinkingComplete: thinkingDone }));
               break; // 跳出内层 for 循环 (不是 while)
             }
 
@@ -240,12 +240,12 @@ export default function Home() {
             const finalCleanedJson = accumulatedJson.replace(/^```json\s*|```$/g, '').trim();
             const finalResult = JSON.parse(finalCleanedJson);
             // 成功解析，用格式化的 JSON 更新最后一条消息
-            updateLastMessage(prev => ({
+            updateLastMessage(_ => ({
                 mainContent: JSON.stringify(finalResult, null, 2) // 最终显示格式化的 JSON
             }));
           } catch (e) {
             console.error("Failed to parse final accumulated JSON:", e);
-            updateLastMessage(prev => ({
+            updateLastMessage(_ => ({
               role: 'error',
               mainContent: `JSON 解析失败: ${e instanceof Error ? e.message : String(e)}\n接收到的内容片段: ${accumulatedJson.substring(0, 200)}...`
             }));
