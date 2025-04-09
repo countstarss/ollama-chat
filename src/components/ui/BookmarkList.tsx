@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Bookmark, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DisplayMessage } from '@/components/ChatMessage';
+import { DisplayMessage } from '@/components/chat/ChatMessage';
 
 interface BookmarkListProps {
   markedMessages: DisplayMessage[];

@@ -1,12 +1,24 @@
-import { useState, useCallback } from "react";
-import { DisplayMessage } from "@/components/ChatMessage";
+import { useState, useCallback, useEffect } from "react";
+import { DisplayMessage } from "@/components/chat/ChatMessage";
 
 export interface UseBookmarksOptions {
   generateDefaultName?: (message: DisplayMessage, index: number) => string;
+  initialMarkedMessages?: DisplayMessage[];
 }
 
 export function useBookmarks(options?: UseBookmarksOptions) {
-  const [markedMessages, setMarkedMessages] = useState<DisplayMessage[]>([]);
+  const [markedMessages, setMarkedMessages] = useState<DisplayMessage[]>(
+    options?.initialMarkedMessages || []
+  );
+
+  // 当initialMarkedMessages变化时更新状态
+  useEffect(() => {
+    if (options?.initialMarkedMessages) {
+      setMarkedMessages(
+        options.initialMarkedMessages.filter((msg) => msg.isMarked)
+      );
+    }
+  }, [options?.initialMarkedMessages]);
 
   // MARK: 生成默认书签名称
   const generateDefaultName = useCallback(

@@ -234,6 +234,18 @@ export default function Home() {
     }
   }, [getSelectedModel]);
 
+  // MARK: 处理书签变化
+  const handleBookmarkChange = useCallback((updatedMessages: DisplayMessage[]) => {
+    // 更新消息列表
+    setMessages(updatedMessages);
+    
+    // 确保立即保存更新后的消息
+    if (currentChatId) {
+      console.log('保存聊天: 书签状态变化');
+      saveCurrentChat(updatedMessages, selectedModel || undefined);
+    }
+  }, [currentChatId, saveCurrentChat, selectedModel]);
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 scrollbar-hide">
       <header className="p-2 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
@@ -273,6 +285,7 @@ export default function Home() {
         onSendMessage={handleSendMessage}
         onAbort={handleAbort}
         isLoading={isLoading}
+        onBookmarkChange={handleBookmarkChange}
       />
     </div>
   );

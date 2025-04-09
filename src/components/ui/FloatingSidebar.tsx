@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { ChevronUp, ChevronDown, Bookmark, BookmarkCheck, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DisplayMessage } from '@/components/ChatMessage';
+import { DisplayMessage } from '@/components/chat/ChatMessage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookmarkInput } from './BookmarkInput';
 import { BookmarkList } from './BookmarkList';

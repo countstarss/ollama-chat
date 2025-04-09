@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { ChatMessage, DisplayMessage } from './ChatMessage';
 import { ChevronDown } from 'lucide-react';
 import { FloatingSidebar } from '../ui/FloatingSidebar';
@@ -12,6 +12,7 @@ interface ChatWindowProps {
   onSendMessage: (message: string) => void;
   onAbort?: () => void;
   isLoading: boolean;
+  onBookmarkChange?: (updatedMessages: DisplayMessage[]) => void;
 }
 
 // 定义暴露给父组件的方法接口
@@ -21,7 +22,7 @@ export interface ChatWindowHandle {
 
 // 使用forwardRef包装组件
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, ref) => {
-  const { messages, onSendMessage, onAbort, isLoading } = props;
+  const { messages, onSendMessage, onAbort, isLoading, onBookmarkChange } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previousMessagesLengthRef = useRef(0);
@@ -30,14 +31,22 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(new Set());
 
+  // 从消息列表中获取已标记的消息
+  const initialMarkedMessages = useMemo(() => 
+    messages.filter(msg => msg.isMarked), 
+    [messages] // 当消息列表变化时更新
+  );
+
   // 使用useBookmarks钩子管理书签
   const {
     markedMessages,
     isMessageMarked,
     toggleBookmark,
     addBookmark
-  } = useBookmarks();
-
+  } = useBookmarks({
+    initialMarkedMessages: initialMarkedMessages
+  });
+  
   // 追踪是否有消息正在生成中
   const isGenerating = messages.length > 0 && 
     messages[messages.length - 1].role === 'assistant' && 
@@ -147,6 +156,17 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     if (!activeMessage) return;
     
     toggleBookmark(activeMessage);
+    
+    // 通知书签变化
+    if (onBookmarkChange) {
+      // 更新消息列表中的标记状态
+      const updatedMessages = messages.map(msg => 
+        msg.id === activeMessageId 
+          ? { ...msg, isMarked: !isMessageMarked(activeMessageId), summary: msg.summary }
+          : msg
+      );
+      onBookmarkChange(updatedMessages);
+    }
   };
   
   // 处理保存自定义名称的书签
@@ -158,6 +178,17 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     
     // 添加书签，并传入自定义名称
     addBookmark(activeMessage, bookmarkName);
+    
+    // 通知书签变化
+    if (onBookmarkChange) {
+      // 更新消息列表中的标记状态和摘要
+      const updatedMessages = messages.map(msg => 
+        msg.id === activeMessageId 
+          ? { ...msg, isMarked: true, summary: bookmarkName }
+          : msg
+      );
+      onBookmarkChange(updatedMessages);
+    }
   };
   
   // MARK: 跳转到上一条
