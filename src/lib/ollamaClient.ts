@@ -1,8 +1,23 @@
-import { ChatMessage, JsonAnalysisInput, ApiTaskType } from "./types";
+import {
+  ChatMessage,
+  JsonAnalysisInput,
+  ApiTaskType,
+  ModelGenerationSettings,
+} from "./types";
 
 const OLLAMA_API_URL =
   process.env.OLLAMA_API_URL || "http://localhost:11434/v1/chat/completions";
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || "deepseek-r1:7b";
+
+// 默认模型生成设置
+export const DEFAULT_GENERATION_SETTINGS: ModelGenerationSettings = {
+  temperature: 0.7,
+  topP: 0.9,
+  topK: 40,
+  maxTokens: 2048,
+  presencePenalty: 0,
+  frequencyPenalty: 0,
+};
 
 // MARK: - 添加模型验证函数
 async function validateModel(model: string): Promise<boolean> {
@@ -38,7 +53,8 @@ async function validateModel(model: string): Promise<boolean> {
 export async function OllamaStream(
   payload: ChatMessage[] | JsonAnalysisInput,
   model: string = DEFAULT_MODEL,
-  task: ApiTaskType // 需要知道任务类型来构建 prompt
+  task: ApiTaskType, // 需要知道任务类型来构建 prompt
+  settings?: ModelGenerationSettings // 添加可选的设置参数
 ): Promise<ReadableStream<Uint8Array>> {
   // 记录使用的模型
   console.log(`准备使用模型: ${model || DEFAULT_MODEL}`);
@@ -52,8 +68,13 @@ export async function OllamaStream(
     console.warn(`警告: 模型 "${selectedModel}" 可能不可用，但仍将尝试使用`);
   }
 
+  // 合并用户提供的设置与默认设置
+  const finalSettings = settings
+    ? { ...DEFAULT_GENERATION_SETTINGS, ...settings }
+    : DEFAULT_GENERATION_SETTINGS;
+
   let messages: { role: string; content: string }[];
-  let temperature = 0.7; // 默认温度
+  let temperature = finalSettings.temperature; // 使用设置中的温度
 
   // --- 根据任务类型构建不同的消息列表 ---
 
@@ -72,10 +93,9 @@ export async function OllamaStream(
     content:
       "You are a helpful AI assistant. If you need to think step-by-step, use <think>...</think> tags for your reasoning before providing the final answer.",
   });
-  temperature = 0.7; // 聊天温度可以高一点
 
   console.log(
-    `Requesting stream from Ollama (${selectedModel}) for task: ${task}`
+    `Requesting stream from Ollama (${selectedModel}) for task: ${task}, temperature: ${temperature}`
   );
 
   try {
@@ -84,14 +104,24 @@ export async function OllamaStream(
       controller.abort();
     }, 30000); // 30秒超时
 
+    // 构建API请求选项
+    const options = {
+      temperature: finalSettings.temperature,
+      top_p: finalSettings.topP,
+      top_k: finalSettings.topK,
+      num_predict: finalSettings.maxTokens,
+      presence_penalty: finalSettings.presencePenalty,
+      frequency_penalty: finalSettings.frequencyPenalty,
+    };
+
     const response = await fetch(OLLAMA_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: selectedModel,
         messages: messages,
-        stream: true, // *** 启用流式响应 ***
-        options: { temperature },
+        stream: true,
+        options: options, // 传递完整的选项对象
       }),
       signal: controller.signal,
     });

@@ -3,13 +3,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ChatWindow, ChatWindowHandle } from '@/components/ChatWindow';
 import { ChatInput } from '@/components/ChatInput';
-import { ApiRequestBody, ApiTaskType } from '@/lib/types';
+import { ApiRequestBody, ApiTaskType, ModelGenerationSettings } from '@/lib/types';
 import { DisplayMessage } from '@/components/ChatMessage';
 import { v4 as uuidv4 } from 'uuid';
 import { useStreamResponse } from '@/hooks/useStreamResponse';
 import { useModelConfig, ModelConfig } from '@/hooks/useModelConfig';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { ModelEditDialog } from '@/components/ui/ModelEditDialog';
+import { ModelSettings, ModelSettingsData, DEFAULT_SETTINGS } from '@/components/ui/ModelSettings';
+import { Settings } from 'lucide-react';
 
 export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -20,6 +22,10 @@ export default function Home() {
   const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
   const [modelError, setModelError] = useState<string | null>(null); // 添加模型错误状态
+  
+  // 设置相关状态
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [modelSettings, setModelSettings] = useState<ModelSettingsData>(DEFAULT_SETTINGS);
 
   // 使用模型配置hook
   const { 
@@ -37,6 +43,19 @@ export default function Home() {
   
   // 使用新实现的hook
   const { sendStreamRequest } = useStreamResponse();
+
+  // 从本地存储加载模型设置
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('ollama-chat-settings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        setModelSettings(parsedSettings);
+      }
+    } catch (error) {
+      console.error('加载模型设置失败:', error);
+    }
+  }, []);
 
   // 当选择模型更改时，清除错误状态
   useEffect(() => {
@@ -96,8 +115,6 @@ export default function Home() {
     const selectedModel = getSelectedModel();
     console.log(`使用模型发送消息: ${selectedModel.name} (${selectedModel.modelId})`);
 
-    
-
     // MARK: --- 准备请求体 ---
     // 简化：只发送当前用户消息，让后端处理历史（如果后端支持）
     // 或者在这里组装历史记录
@@ -110,7 +127,15 @@ export default function Home() {
     const requestBody: ApiRequestBody= { 
       task: currentTask, 
       payload: historyToSend,
-      model: selectedModel.modelId // 传递选中的模型ID
+      model: selectedModel.modelId, // 传递选中的模型ID
+      settings: {
+        temperature: modelSettings.temperature,
+        topP: modelSettings.topP,
+        topK: modelSettings.topK,
+        maxTokens: modelSettings.maxTokens,
+        presencePenalty: modelSettings.presencePenalty,
+        frequencyPenalty: modelSettings.frequencyPenalty
+      }
     };
 
 
@@ -172,7 +197,7 @@ export default function Home() {
       setIsLoading(false);
       setAbortController(null); // 清除AbortController
     }
-  }, [messages, addMessage, updateLastMessage, sendStreamRequest, getSelectedModel]);
+  }, [messages, addMessage, updateLastMessage, sendStreamRequest, getSelectedModel, modelSettings]);
 
   // 处理打开添加模型对话框
   const handleAddModel = useCallback(() => {
@@ -214,6 +239,18 @@ export default function Home() {
     };
   }, [editingModelId, models]);
 
+  // 处理保存模型设置
+  const handleSaveSettings = useCallback((newSettings: ModelSettingsData) => {
+    setModelSettings(newSettings);
+    
+    // 保存到本地存储
+    try {
+      localStorage.setItem('ollama-chat-settings', JSON.stringify(newSettings));
+    } catch (error) {
+      console.error('保存模型设置失败:', error);
+    }
+  }, []);
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 scrollbar-hide">
       <header className="p-4 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
@@ -239,6 +276,16 @@ export default function Home() {
               </div>
             )}
           </div>
+          
+          {/* 设置按钮 */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md transition-colors"
+            disabled={isLoading}
+            title="模型参数设置"
+          >
+            <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          </button>
         </div>
       </header>
 
@@ -260,6 +307,14 @@ export default function Home() {
         onSave={handleSaveModel}
         initialData={getModelForEditing()}
         isEditing={!!editingModelId}
+      />
+      
+      {/* 模型设置对话框 */}
+      <ModelSettings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={modelSettings}
+        onSave={handleSaveSettings}
       />
     </div>
   );

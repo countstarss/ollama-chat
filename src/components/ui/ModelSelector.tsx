@@ -67,7 +67,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 p-2 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+        <div className="absolute top-full left-0 mt-1 w-56 p-2 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-20">
           <div className="max-h-60 overflow-y-auto scrollbar-hide">
             {models.map(model => (
               <div 
