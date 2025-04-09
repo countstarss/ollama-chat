@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Sidebar } from "@/components/sidebar";
+import { Sidebar } from "@/components/ui/sidebar/index";
 import { SidebarProvider } from "@/components/context/sidebar-context";
 import { cn } from "@/lib/utils";
 

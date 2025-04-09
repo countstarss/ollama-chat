@@ -10,7 +10,7 @@ import { useModelConfig, ModelConfig } from '@/hooks/useModelConfig';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { ModelEditDialog } from '@/components/ui/ModelEditDialog';
 import { ModelSettings, ModelSettingsData, DEFAULT_SETTINGS } from '@/components/ui/ModelSettings';
-import { Settings, Menu } from 'lucide-react';
+import { Settings, Menu, ChevronLeft } from 'lucide-react';
 import { useSidebar } from '@/components/context/sidebar-context';
 import { Button } from '@/components/ui/button';
 
@@ -259,13 +259,16 @@ export default function Home() {
       <header className="p-2 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8">
-            <Menu className="h-4 w-4" />
+            {
+              isCollapsed ? (
+                <Menu className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )
+            }
           </Button>
-          {
-            isCollapsed && (
-              <h1 className="text-xl font-semibold">Ollama 助手</h1>
-            )
-          }
+          <h1 className="text-xl font-semibold">Ollama 助手</h1>
+
         </div>
         
         <div className="flex items-center gap-3">

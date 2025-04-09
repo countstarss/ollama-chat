@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Database,
 } from "lucide-react"
-import { useSidebar } from "./context/sidebar-context"
+import { useSidebar } from "../context/sidebar-context"
 import {
   Collapsible,
   CollapsibleContent,
