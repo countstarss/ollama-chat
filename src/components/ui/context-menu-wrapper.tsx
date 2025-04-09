@@ -1,5 +1,5 @@
 import React from 'react';
-import { ContextMenu, ContextMenuTrigger } from './ui/context-menu';
+import { ContextMenu, ContextMenuTrigger } from '../ui/context-menu';
 
 interface ContextMenuWrapperProps {
   // You can define any props needed here
