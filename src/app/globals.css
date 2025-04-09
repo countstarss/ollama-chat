@@ -24,3 +24,59 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 隐藏所有滚动条 */
+* {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+}
+
+/* 隐藏Webkit浏览器滚动条 */
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* 只在消息列表显示自定义滚动条 */
+.message-list {
+  scrollbar-width: thin;
+  /* Firefox */
+  -ms-overflow-style: auto;
+  /* IE/Edge */
+}
+
+/* 为消息列表定制滚动条样式（Webkit浏览器） */
+.message-list::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.message-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.4);
+  border-radius: 10px;
+}
+
+.message-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.7);
+}
+
+/* 暗模式下的滚动条样式 */
+@media (prefers-color-scheme: dark) {
+  .message-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .message-list::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.3);
+  }
+
+  .message-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(150, 150, 150, 0.5);
+  }
+}
