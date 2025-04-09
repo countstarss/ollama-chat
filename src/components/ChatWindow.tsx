@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } f
 import { ChatMessage, DisplayMessage } from './ChatMessage';
 import { ChevronDown } from 'lucide-react';
 import { FloatingSidebar } from './ui/FloatingSidebar';
+import { useBookmarks } from '@/hooks/useBookmarks';
 
 interface ChatWindowProps {
   messages: DisplayMessage[];
@@ -25,8 +26,14 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(new Set());
 
-  // 跟踪标记的消息
-  const [markedMessages, setMarkedMessages] = useState<DisplayMessage[]>([]);
+  // 使用useBookmarks钩子管理书签
+  const {
+    markedMessages,
+    isMessageMarked,
+    toggleBookmark,
+    addBookmark,
+    removeBookmark
+  } = useBookmarks();
 
   // 追踪是否有消息正在生成中
   const isGenerating = messages.length > 0 && 
@@ -130,31 +137,24 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   }, [messages, isGenerating, isAutoScrollEnabled]);
 
   // MARK: 标记/取消标记消息
-  const toggleMarkMessage = () => {
+  const handleToggleBookmark = () => {
     if (!activeMessageId) return;
     
     const activeMessage = messages.find(m => m.id === activeMessageId);
     if (!activeMessage) return;
     
-    // 检查消息是否已经被标记
-    const isCurrentlyMarked = markedMessages.some(m => m.id === activeMessageId);
+    toggleBookmark(activeMessage);
+  };
+  
+  // 处理保存自定义名称的书签
+  const handleSaveBookmark = (bookmarkName: string) => {
+    if (!activeMessageId) return;
     
-    // 创建消息的副本以避免修改原始消息
-    const messageWithUpdatedMark = {
-      ...activeMessage,
-      isMarked: !isCurrentlyMarked,
-      // 如果摘要为空，自动生成一个
-      summary: activeMessage.summary || `${activeMessage.role === 'user' ? '用户问题' : '回复'} ${markedMessages.length + 1}`
-    };
+    const activeMessage = messages.find(m => m.id === activeMessageId);
+    if (!activeMessage) return;
     
-    // MARK: 更新标记的消息列表
-    if (!isCurrentlyMarked) {
-      // 标记消息
-      setMarkedMessages(prev => [...prev, messageWithUpdatedMark]);
-    } else {
-      // 取消标记
-      setMarkedMessages(prev => prev.filter(m => m.id !== activeMessageId));
-    }
+    // 添加书签，并传入自定义名称
+    addBookmark(activeMessage, bookmarkName);
   };
   
   // MARK: 跳转到上一条
@@ -215,7 +215,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   // MARK: 获取当前消息的标记状态
   const isCurrentMessageMarked = () => {
     if (!activeMessageId) return false;
-    return markedMessages.some(m => m.id === activeMessageId);
+    return isMessageMarked(activeMessageId);
   };
 
   return (
@@ -251,7 +251,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
         <FloatingSidebar 
           onPrevious={goToPreviousMessage}
           onNext={goToNextMessage}
-          onMark={toggleMarkMessage}
+          onMark={handleToggleBookmark}
+          onSaveBookmark={handleSaveBookmark}
           isMarked={isCurrentMessageMarked()}
           hasPrevious={hasPreviousMessage}
           hasNext={hasNextMessage}

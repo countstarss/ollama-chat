@@ -35,7 +35,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
     }
   };
 
-  // MARK: 自动调整 textarea 高度
+  // MARK: 自动调整高度
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'; // Reset height
@@ -45,7 +45,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
 
 
   return (
-    <form onSubmit={handleSubmit} className="fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <form onSubmit={handleSubmit} className="fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 ">
       <div className="flex items-center space-x-2">
         <textarea
           ref={textareaRef}
@@ -53,7 +53,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="输入消息或 JSON (切换模式后)..."
-          className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px]" // Limit height
+          className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px]" 
           rows={1}
           disabled={isLoading}
         />
