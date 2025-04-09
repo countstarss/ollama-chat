@@ -15,6 +15,7 @@ import { useSidebar } from '@/components/context/sidebar-context';
 import { Button } from '@/components/ui/button';
 import { EditableChatTitle } from '@/components/ui/EditableChatTitle';
 import { v4 as uuidv4 } from 'uuid';
+import toastService from '@/services/toastService';
 
 export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -174,6 +175,7 @@ export default function Home() {
       
       if (!success) {
         console.error("流式请求未能成功完成");
+        toastService.error("响应生成失败，请重试");
       }
       
       // MARK: 响应完成后滚到底部
@@ -206,6 +208,10 @@ export default function Home() {
           mainContent: `模型错误: ${errorMessage}\n\n请尝试选择其他模型或检查Ollama服务是否正常运行。`,
           isThinkingComplete: true,
         }));
+        
+        toastService.error(`模型 "${selectedModel.modelId}" 不可用`, {
+          description: "请尝试选择其他模型或检查 Ollama 服务是否正常运行"
+        });
       } else {
         // 处理一般错误
         updateLastMessage(() => ({
@@ -214,6 +220,10 @@ export default function Home() {
           mainContent: `发送消息错误: ${errorMessage}`,
           isThinkingComplete: true,
         }));
+        
+        toastService.error("发送消息失败", {
+          description: errorMessage
+        });
       }
     } finally {
       isStreamCompletedRef.current = true;
@@ -249,6 +259,7 @@ export default function Home() {
     setSelectedModel(tempModel);
     setModelError(null);
     
+    toastService.success(`已切换至模型: ${modelId}`);
   }, []);
 
   // MARK: 处理书签变化
@@ -260,6 +271,7 @@ export default function Home() {
     if (currentChatId) {
       console.log('保存聊天: 书签状态变化');
       saveCurrentChat(updatedMessages, selectedModel || undefined);
+      toastService.success("书签已更新");
     }
   }, [currentChatId, saveCurrentChat, selectedModel]);
 

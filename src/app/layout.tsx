@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/ui/sidebar/index";
 import { SidebarProvider } from "@/components/context/sidebar-context";
+import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default function RootLayout({
                   </div>
                 </main>
               </div>
+              <Toaster />
             </SidebarProvider>
           </TooltipProvider>
         </ThemeProvider>

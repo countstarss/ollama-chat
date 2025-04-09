@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import toastService from "@/services/toastService";
 
 // 模型配置接口
 export interface ModelConfig {
@@ -45,6 +46,7 @@ export function useModelConfig() {
         }
       } catch (error) {
         console.error("加载模型配置失败:", error);
+        toastService.error("加载模型配置失败");
       }
     };
 
@@ -63,6 +65,7 @@ export function useModelConfig() {
       );
     } catch (error) {
       console.error("保存模型配置失败:", error);
+      toastService.error("保存模型配置失败");
     }
   }, [models, selectedModelId]);
 
@@ -74,6 +77,7 @@ export function useModelConfig() {
     };
 
     setModels((prevModels) => [...prevModels, newModel]);
+    toastService.success(`已添加模型 ${model.name}`);
     return newModel.id;
   }, []);
 
@@ -85,6 +89,7 @@ export function useModelConfig() {
           model.id === id ? { ...model, ...updates } : model
         )
       );
+      toastService.success("模型已更新");
     },
     []
   );
@@ -97,9 +102,14 @@ export function useModelConfig() {
         setSelectedModelId("default-deepseek");
       }
 
+      const modelToDelete = models.find((model) => model.id === id);
       setModels((prevModels) => prevModels.filter((model) => model.id !== id));
+
+      if (modelToDelete) {
+        toastService.success(`已删除模型 ${modelToDelete.name}`);
+      }
     },
-    [selectedModelId]
+    [selectedModelId, models]
   );
 
   // MARK: 选择模型

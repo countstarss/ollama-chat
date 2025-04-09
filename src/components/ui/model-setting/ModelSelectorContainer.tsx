@@ -80,7 +80,6 @@ export function ModelSelectorContainer({ isLoading, onModelChange }: ModelSelect
               </Tooltip>
             </TooltipProvider>
           </div>
-
         </div>
         <Button 
           size="sm"

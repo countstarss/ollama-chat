@@ -11,6 +11,7 @@ import {
 } from "@/services/chatStorage";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ModelConfig } from "@/hooks/useModelConfig";
+import toastService from "@/services/toastService";
 
 export function useChatSession() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export function useChatSession() {
       } catch (error) {
         console.error("加载最近聊天失败:", error);
         setIsLoading(false);
+        toastService.error("加载聊天历史失败");
       }
     };
 
@@ -84,6 +86,7 @@ export function useChatSession() {
       } catch (error) {
         console.error(`加载聊天失败 ${chatId}:`, error);
         setIsLoading(false);
+        toastService.error(`加载聊天记录失败`);
         return [];
       }
     },
@@ -125,6 +128,7 @@ export function useChatSession() {
         }
       } catch (error) {
         console.error("保存聊天失败:", error);
+        toastService.error("保存聊天失败，可能会丢失当前对话");
       }
     },
     [currentChatId, chatName, hasNamedCurrentChat]
@@ -153,8 +157,10 @@ export function useChatSession() {
 
         const chats = await getAllChats();
         setRecentChats(chats);
+        toastService.success("对话已重命名");
       } catch (error) {
         console.error(`重命名聊天失败 ${chatId}:`, error);
+        toastService.error("重命名对话失败");
       }
     },
     [currentChatId]
@@ -173,8 +179,10 @@ export function useChatSession() {
 
         const chats = await getAllChats();
         setRecentChats(chats);
+        toastService.success("对话已删除");
       } catch (error) {
         console.error(`删除聊天失败 ${chatId}:`, error);
+        toastService.error("删除对话失败");
       }
     },
     [currentChatId, createNewChat]
