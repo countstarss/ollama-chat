@@ -52,7 +52,7 @@ async function validateModel(model: string): Promise<boolean> {
 // MARK: - OllamaStream
 export async function OllamaStream(
   payload: ChatMessage[] | JsonAnalysisInput,
-  model: string = DEFAULT_MODEL,
+  model: string,
   task: ApiTaskType, // 需要知道任务类型来构建 prompt
   settings?: ModelGenerationSettings // 添加可选的设置参数
 ): Promise<ReadableStream<Uint8Array>> {

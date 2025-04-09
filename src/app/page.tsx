@@ -23,7 +23,7 @@ export default function Home() {
   
   // 使用hooks
   const { modelSettings } = useModelSettings();
-  const { getSelectedModel } = useModelConfig();
+  const { getSelectedModel, selectModel, models } = useModelConfig();
   const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null);
   const chatWindowRef = useRef<ChatWindowHandle>(null);
   const { sendStreamRequest } = useStreamResponse();
@@ -64,6 +64,7 @@ export default function Home() {
     const model = getSelectedModel();
     if (model) {
       setSelectedModel(model);
+      console.log(`[初始化] 当前选中模型: ${model.name} (${model.modelId})`);
     }
   }, [getSelectedModel]);
   
@@ -129,6 +130,9 @@ export default function Home() {
     // 清除任何之前的错误
     setModelError(null);
     
+    // 输出当前使用的模型信息
+    console.log(`[发送消息] 当前使用模型: ${selectedModel ? `${selectedModel.name} (${selectedModel.modelId})` : '未选择模型'}`);
+    
     // 添加用户消息
     setMessages((prev) => [...prev, { 
       id: uuidv4(), 
@@ -148,9 +152,14 @@ export default function Home() {
       setIsLoading(false);
       return;
     }
-    console.log(`使用模型发送消息: ${selectedModel.name} (${selectedModel.modelId})`);
-    // 准备请求体
-    const requestBody = prepareRequestBody(userInput, messages, selectedModel, modelSettings);
+    console.log(`[请求API] 模型信息: ${selectedModel.name} (${selectedModel.modelId})`);
+    // MARK: 准备请求体
+    const requestBody = prepareRequestBody(
+        userInput, 
+        messages, 
+        selectedModel, 
+        modelSettings
+    );
 
     // 添加助手占位消息
     addAssistantPlaceholder();
@@ -226,13 +235,21 @@ export default function Home() {
 
   // 处理模型选择变更
   const handleModelChange = useCallback((modelId: string) => {
-    // 获取完整的模型信息
-    const model = getSelectedModel();
-    if (model) {
-      setSelectedModel(model);
-      setModelError(null);
-    }
-  }, [getSelectedModel]);
+    console.log(`[切换模型] 收到用户输入的模型名称: ${modelId}`);
+    
+    // 创建一个临时的模型配置对象
+    const tempModel: ModelConfig = {
+      id: `temp-${Date.now()}`,
+      name: modelId, // 使用modelId作为显示名称
+      modelId: modelId, // 直接使用传入的modelId
+      description: `直接指定的模型 ${modelId}`
+    };
+    
+    console.log(`[切换模型] 直接使用模型名称: ${tempModel.modelId}`);
+    setSelectedModel(tempModel);
+    setModelError(null);
+    
+  }, []);
 
   // MARK: 处理书签变化
   const handleBookmarkChange = useCallback((updatedMessages: DisplayMessage[]) => {
@@ -261,6 +278,10 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-3">
+          <ModelSelectorContainer 
+            isLoading={isLoading} 
+            onModelChange={handleModelChange} 
+          />
           <Button
             variant="outline"
             size="sm"
@@ -271,10 +292,6 @@ export default function Home() {
             <span className="hidden sm:inline">新建聊天</span>
           </Button>
         
-          <ModelSelectorContainer 
-            isLoading={isLoading} 
-            onModelChange={handleModelChange} 
-          />
           <ModelSettingsButton isLoading={isLoading} />
         </div>
       </header>

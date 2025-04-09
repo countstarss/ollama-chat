@@ -78,6 +78,14 @@ export function useChatActions(
       selectedModel: ModelConfig,
       modelSettings: ModelSettingsData
     ): ApiRequestBody => {
+      // 输出详细的模型信息用于调试
+      console.log(`[准备请求] 模型详情:`, {
+        id: selectedModel.id,
+        name: selectedModel.name,
+        modelId: selectedModel.modelId,
+        description: selectedModel.description,
+      });
+
       // 简化：只发送当前用户消息，让后端处理历史（如果后端支持）
       // 或者在这里组装历史记录
       const historyToSend = messages
@@ -88,7 +96,7 @@ export function useChatActions(
 
       const currentTask: ApiTaskType = "general_chat";
 
-      return {
+      const requestBody = {
         task: currentTask,
         payload: historyToSend,
         model: selectedModel.modelId, // 传递选中的模型ID
@@ -101,6 +109,10 @@ export function useChatActions(
           frequencyPenalty: modelSettings.frequencyPenalty,
         },
       };
+
+      console.log(`[发送API请求] 使用模型ID: ${requestBody.model}`);
+
+      return requestBody;
     },
     []
   );

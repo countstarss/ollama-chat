@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     const { task, payload, model, settings } = body;
 
     console.log(
+      `body: ${JSON.stringify(body)}`,
       `API收到任务: ${task}${model ? `, 模型: ${model}` : ""}${
         settings ? ", 带自定义设置" : ""
       }`
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     if (task === "general_chat" || task === "analyze_json_add_tags") {
       try {
         // 传递设置参数给OllamaStream
-        const stream = await OllamaStream(payload, model, task, settings);
+        const stream = await OllamaStream(payload, model || "", task, settings);
 
         // 返回 Streaming Response
         // 使用 text/plain 或 text/event-stream 都可以，前端相应处理

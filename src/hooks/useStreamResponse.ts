@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { ApiRequestBody, ApiTaskType } from "@/lib/types";
-import { DisplayMessage } from "@/components/ChatMessage";
+import { DisplayMessage } from "@/components/chat/ChatMessage";
 
 type StreamResponseCallback = (updates: Partial<DisplayMessage>) => void;
 
