@@ -9,9 +9,11 @@ import { ModelSelectorContainer } from '@/components/ui/model-setting/ModelSelec
 import { ModelSettingsButton } from '@/components/ui/model-setting/ModelSettingsButton';
 import { useModelSettings } from '@/hooks/useModelSettings';
 import { useChatActions } from '@/hooks/useChatActions';
-import { Menu, ChevronLeft } from 'lucide-react';
+import { useChatSession } from '@/hooks/useChatSession';
+import { Menu, ChevronLeft, Plus } from 'lucide-react';
 import { useSidebar } from '@/components/context/sidebar-context';
 import { Button } from '@/components/ui/button';
+import { EditableChatTitle } from '@/components/ui/EditableChatTitle';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function Home() {
@@ -27,7 +29,21 @@ export default function Home() {
   const { sendStreamRequest } = useStreamResponse();
   const { toggleSidebar, isCollapsed } = useSidebar();
   
-  // 使用新的聊天操作hook
+  // 使用聊天会话hook
+  const {
+    currentChatId,
+    chatName,
+    loadChat,
+    saveCurrentChat,
+    createNewChat,
+    renameChat
+  } = useChatSession();
+  
+  // 追踪消息数量和生成状态
+  const previousMessagesCountRef = useRef<number>(0);
+  const isStreamCompletedRef = useRef<boolean>(true);
+  
+  // 使用聊天操作hook
   const {
     handleAbort,
     updateLastMessage,
@@ -50,7 +66,64 @@ export default function Home() {
       setSelectedModel(model);
     }
   }, [getSelectedModel]);
+  
+  // 如果URL里有chatId参数，加载相应的聊天记录
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (currentChatId) {
+        const loadedMessages = await loadChat(currentChatId);
+        if (loadedMessages && loadedMessages.length > 0) {
+          setMessages(loadedMessages);
+        } else {
+          // 如果没有加载到消息，清空当前消息列表
+          setMessages([]);
+        }
+      }
+    };
+    
+    loadMessages();
+  }, [currentChatId, loadChat]);
+  
+  // 在消息变化时保存聊天，但仅在消息数量变化或消息生成完成时
+  useEffect(() => {
+    // 只有当currentChatId存在且有消息时才继续
+    if (!currentChatId || messages.length === 0) {
+      previousMessagesCountRef.current = messages.length;
+      return;
+    }
+    
+    // 检查消息数量是否变化
+    const messageCountChanged = previousMessagesCountRef.current !== messages.length;
+    
+    // 检查最后一条消息是否完成生成（非流式响应中）
+    const lastMessage = messages[messages.length - 1];
+    const isLastMessageComplete = lastMessage && 
+                                 (lastMessage.role !== 'assistant' || 
+                                  lastMessage.isThinkingComplete === true);
+                                  
+    // 更新消息数量引用
+    previousMessagesCountRef.current = messages.length;
+    // 只有在以下情况下保存:
+    // 1. 消息数量发生变化 2. 最后一条消息完成生成 3. 流式响应已完成
+    if (messageCountChanged || (isLastMessageComplete && isStreamCompletedRef.current)) {
+      console.log('保存聊天: 消息数量变化或消息生成完成');
+      saveCurrentChat(messages, selectedModel || undefined);
+    }
+  }, [messages, currentChatId, selectedModel, saveCurrentChat]);
 
+  // 处理聊天标题重命名
+  const handleRenameChat = useCallback((newTitle: string) => {
+    if (currentChatId) {
+      renameChat(currentChatId, newTitle);
+    }
+  }, [currentChatId, renameChat]);
+  
+  // 处理新建聊天按钮点击
+  const handleNewChat = useCallback(() => {
+    createNewChat();
+    setMessages([]);
+  }, [createNewChat]);
+  
   // MARK: 处理发送消息
   const handleSendMessage = useCallback(async (userInput: string) => {
     // 清除任何之前的错误
@@ -64,6 +137,8 @@ export default function Home() {
     }]);
   
     setIsLoading(true);
+    // 标记流式响应开始
+    isStreamCompletedRef.current = false;
 
     // 创建新的AbortController
     const controller = createAbortController();
@@ -94,6 +169,10 @@ export default function Home() {
       
       // MARK: 响应完成后滚到底部
       scrollToBottom();
+      
+      // 标记流式响应完成，并保存当前聊天
+      isStreamCompletedRef.current = true;
+      saveCurrentChat(messages, selectedModel || undefined);
     } catch (error) {
       console.error('消息发送错误:', error);
       
@@ -128,6 +207,7 @@ export default function Home() {
         }));
       }
     } finally {
+      isStreamCompletedRef.current = true;
       setIsLoading(false);
     }
   }, [
@@ -140,7 +220,8 @@ export default function Home() {
     addAssistantPlaceholder,
     createAbortController,
     scrollToBottom,
-    setModelError
+    setModelError,
+    saveCurrentChat
   ]);
 
   // 处理模型选择变更
@@ -160,10 +241,24 @@ export default function Home() {
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8">
             {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
-          <h1 className="text-xl font-semibold">Ollama 助手</h1>
+          
+          <EditableChatTitle 
+            title={chatName} 
+            onRename={handleRenameChat} 
+          />
         </div>
         
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={handleNewChat}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">新建聊天</span>
+          </Button>
+        
           <ModelSelectorContainer 
             isLoading={isLoading} 
             onModelChange={handleModelChange} 

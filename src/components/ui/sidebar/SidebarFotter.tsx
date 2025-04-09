@@ -42,7 +42,7 @@ export function SidebarFooter() {
     <div className="p-2 rounded-xl">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <div className="bg-neutral-900 p-4 flex items-center gap-2 w-full rounded-sm">
+            <div className=" bg-neutral-200 dark:bg-neutral-900 p-4 flex items-center gap-2 w-full rounded-sm">
               <Avatar className="h-7 w-7">
                 <AvatarImage src="https://github.com/shadcn.png" />
                 <AvatarFallback>SC</AvatarFallback>
