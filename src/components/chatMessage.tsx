@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import { cn } from "@/lib/utils"; 
 import ReactMarkdown from 'react-markdown';
@@ -13,27 +13,58 @@ export interface DisplayMessage extends ChatMessageType {
   thinkContent?: string;
   isThinkingComplete?: boolean;
   mainContent?: string; // 用于流式接收
+  summary?: string;    // 消息摘要
+  isMarked?: boolean;  // 是否被标记
 }
 
 interface ChatMessageProps {
   message: DisplayMessage;
+  isActive?: boolean;
+  onInView?: (isInView: boolean, message: DisplayMessage) => void;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = false, onInView }) => {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
+  const messageRef = useRef<HTMLDivElement>(null);
 
-  // 当思考完成时自动折叠思考内容
+  // MARK: 自动折叠思考内容
   useEffect(() => {
     if (message.isThinkingComplete) {
       setIsThinkingExpanded(false);
     }
   }, [message.isThinkingComplete]);
 
+  // MARK: 检测是否在视口中
+  // NOTE: 使用Intersection Observer API检测消息是否在视口中
+  useEffect(() => {
+    if (!onInView || !messageRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onInView(true, message);
+        } else {
+          onInView(false, message);
+        }
+      },
+      {
+        threshold: 0.5, // 当50%的元素可见时触发
+        rootMargin: "0px"
+      }
+    );
+    
+    observer.observe(messageRef.current);
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [message, onInView]);
+
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
   const isError = message.role === 'error';
 
-  // 获取头像URL
+  // MARK: 获取头像URL
   const getAvatarUrl = () => {
     if (isUser) {
       return 'https://avatar.vercel.sh/user?size=32';
@@ -48,10 +79,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     "p-3 rounded-lg", // 调整宽度
     "prose prose-sm dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-pre:my-2 prose-pre:p-2 prose-pre:bg-gray-800 prose-pre:rounded", // Markdown 基础样式
     isUser ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100",
-    isError ? "bg-red-100 dark:bg-red-900 border border-red-500 text-red-700 dark:text-red-200 prose-red" : ""
+    isError ? "bg-red-100 dark:bg-red-900 border border-red-500 text-red-700 dark:text-red-200 prose-red" : "",
+    isActive && !isUser ? "ring-2 ring-blue-400 dark:ring-blue-500 bg-gray-200 dark:bg-gray-600" : "",
+    isActive && isUser ? "ring-2 ring-blue-300" : ""
   );
 
-  // 最终要显示的内容 (流式部分或完整内容)
+  // MARK: 最终显示的内容
   const contentToDisplay = message.mainContent ?? message.content;
 
   // Markdown 组件配置，包括代码高亮
@@ -86,7 +119,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   };
 
   return (
-    <div className={`flex mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div 
+      className={`flex mb-3 ${isUser ? 'justify-end' : 'justify-start'} transition-all duration-300`} 
+      ref={messageRef}
+      id={`message-${message.id}`}
+    >
       {/* 非用户消息时，左侧显示头像 */}
       {!isUser && (
         <div className="flex-shrink-0 mr-2">
@@ -106,6 +143,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       )}
       
       <div className="flex flex-col max-w-[75%]">
+        {message.isMarked && message.summary && (
+          <div className="text-xs text-blue-500 dark:text-blue-400 mb-1 font-medium">
+            {message.summary}
+          </div>
+        )}
+        
         <div className={bubbleClasses}>
           {/* 思考过程部分 (仅助手消息且存在时显示) */}
           {isAssistant && message.thinkContent && (
@@ -115,6 +158,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
                 onClick={(e) => {
                   // 阻止默认的 details 切换行为，手动控制状态
                   e.preventDefault();
+                  setIsThinkingExpanded(!isThinkingExpanded);
                 }}
               >
                 思考过程... {!message.isThinkingComplete && "(进行中)"} {(message.isThinkingComplete && !isThinkingExpanded) && "(点击展开)"} {(message.isThinkingComplete && isThinkingExpanded) && "(点击折叠)"}
@@ -144,19 +188,20 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             {contentToDisplay}
           </ReactMarkdown>
           
-          {/* 消息底部的复制按钮 - 常驻显示 */}
-          {contentToDisplay && contentToDisplay.trim().length > 0 && (
+          
+        </div>
+        {/* 消息底部的复制按钮 - 常驻显示 */}
+        {contentToDisplay && contentToDisplay.trim().length > 0 && (
             <div className="flex justify-end mt-2">
               <CopyButton 
                 text={contentToDisplay} 
                 size="sm" 
-                variant={isUser ? "outline" : "subtle"}
-                className={isUser ? "text-white bg-blue-700/50" : "text-gray-400 bg-gray-800/30"}
+                variant="subtle"
+                className={"text-gray-400 bg-gray-800/30"}
                 successText="已复制全部内容"
               />
             </div>
           )}
-        </div>
       </div>
       
       {/* 用户消息时，右侧显示头像 */}

@@ -80,3 +80,10 @@ body {
     background: rgba(150, 150, 150, 0.5);
   }
 }
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+}

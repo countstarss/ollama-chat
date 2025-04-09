@@ -12,10 +12,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
   const [inputValue, setInputValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // MARK: 处理输入变化
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(event.target.value);
   };
 
+  // MARK: 处理表单提交
   const handleSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     if (inputValue.trim() && !isLoading) {
@@ -24,6 +26,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
     }
   };
 
+  // MARK: 处理键盘事件
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Submit on Enter press (Shift+Enter for new line)
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -32,7 +35,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
     }
   };
 
-  // Auto-resize textarea height
+  // MARK: 自动调整 textarea 高度
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'; // Reset height
@@ -42,7 +45,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
 
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <form onSubmit={handleSubmit} className="fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div className="flex items-center space-x-2">
         <textarea
           ref={textareaRef}
@@ -50,7 +53,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="输入消息或 JSON (切换模式后)..."
-          className="flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px]" // Limit height
+          className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px]" // Limit height
           rows={1}
           disabled={isLoading}
         />
@@ -58,7 +61,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           <button
             type="button"
             onClick={onAbort}
-            className="px-4 py-2 bg-red-400 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            className="px-4 py-2 bg-red-400 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
           >
             暂停
           </button>
@@ -66,7 +69,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
           >
             {isLoading ? '发送中...' : '发送'}
           </button>
