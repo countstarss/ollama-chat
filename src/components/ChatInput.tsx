@@ -48,7 +48,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
     <form 
       onSubmit={handleSubmit} 
       className={`fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 
-      ${isLoading ? 'shadow-lg shadow-white/50' : ''}
       hover:scale-[1.02] transition-all duration-300
       `}
     >

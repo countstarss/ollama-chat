@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Settings, Trash2, Edit } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ModelConfig } from '@/hooks/useModelConfig';
 

@@ -31,8 +31,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     markedMessages,
     isMessageMarked,
     toggleBookmark,
-    addBookmark,
-    removeBookmark
+    addBookmark
   } = useBookmarks();
 
   // 追踪是否有消息正在生成中
@@ -263,3 +262,5 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     </div>
   );
 });
+
+ChatWindow.displayName = 'ChatWindow';

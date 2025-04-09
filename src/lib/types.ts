@@ -14,8 +14,9 @@ export interface JsonAnalysisResult extends JsonAnalysisInput {
   error?: string; 
 }
 
-// Type for the API request body
-export type ApiTaskType = "analyze_json_add_tags" | "general_chat"; // Add more task types here
+// MARK: API请求体类型
+// NOTE: 未来可以拓展
+export type ApiTaskType = "general_chat"; // Add more task types here
 
 export interface ApiRequestBody {
   task: ApiTaskType;

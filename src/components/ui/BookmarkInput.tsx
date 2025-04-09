@@ -2,8 +2,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Check } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 interface BookmarkInputProps {
   onSave: (name: string) => void;

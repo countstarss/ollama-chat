@@ -89,7 +89,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
 
   // Markdown 组件配置，包括代码高亮
   const markdownComponents = {
-    code({ node, inline, className, children, ...props }: any) {
+    code({ inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '');
       return !inline && match ? (
         <div className="relative group">

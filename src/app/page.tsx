@@ -11,12 +11,9 @@ import { useModelConfig, ModelConfig } from '@/hooks/useModelConfig';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { ModelEditDialog } from '@/components/ui/ModelEditDialog';
 
-type InteractionMode = "chat" | "json_analysis";
-
 export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [mode, setMode] = useState<InteractionMode>("chat");
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   // 模型相关状态
@@ -99,45 +96,26 @@ export default function Home() {
     const selectedModel = getSelectedModel();
     console.log(`使用模型发送消息: ${selectedModel.name} (${selectedModel.modelId})`);
 
-    let requestBody: ApiRequestBody;
-    let currentTask: ApiTaskType;
+    
 
     // MARK: --- 准备请求体 ---
-    if (mode === "json_analysis") {
-      currentTask = "analyze_json_add_tags";
-      try {
-        const parsedJson = JSON.parse(userInput);
-        if (typeof parsedJson.content !== 'string') {
-          throw new Error('Input JSON must contain a "content" field (string).');
-        }
-        requestBody = { 
-          task: currentTask, 
-          payload: parsedJson,
-          model: selectedModel.modelId // 传递选中的模型ID
-        };
-      } catch (e) {
-         console.error("Invalid JSON input:", e);
-         addMessage({ role: 'error', content: `输入不是有效的 JSON 或缺少 "content" 字段。\n错误: ${e instanceof Error ? e.message : String(e)}` });
-         setIsLoading(false);
-         return;
-      }
-    } else {
-      currentTask = "general_chat";
-      // 简化：只发送当前用户消息，让后端处理历史（如果后端支持）
-      // 或者在这里组装历史记录
-       const historyToSend = messages.slice(-6) // 发送最近几条消息 + 当前消息
-           .filter(m => m.role === 'user' || m.role === 'assistant') // 只发送用户和助手消息
-           .map(m => ({ role: m.role, content: m.mainContent ?? m.content })); // 发送最终内容
-       historyToSend.push({role: 'user', content: userInput});
-      requestBody = { 
-        task: currentTask, 
-        payload: historyToSend,
-        model: selectedModel.modelId // 传递选中的模型ID
-      };
-    }
+    // 简化：只发送当前用户消息，让后端处理历史（如果后端支持）
+    // 或者在这里组装历史记录
+    const historyToSend = messages.slice(-6) // 发送最近几条消息 + 当前消息
+        .filter(m => m.role === 'user' || m.role === 'assistant') // 只发送用户和助手消息
+        .map(m => ({ role: m.role, content: m.mainContent ?? m.content })); // 发送最终内容
+    historyToSend.push({role: 'user', content: userInput});
+
+    const currentTask: ApiTaskType = "general_chat";
+    const requestBody: ApiRequestBody= { 
+      task: currentTask, 
+      payload: historyToSend,
+      model: selectedModel.modelId // 传递选中的模型ID
+    };
+
 
     // --- 添加助手消息占位符 ---
-    let assistantMessageId = uuidv4();
+    const assistantMessageId = uuidv4();
     setMessages((prev) => [...prev, { id: assistantMessageId, role: 'assistant', content: '', thinkContent: '', mainContent: '', isThinkingComplete: false }]);
 
     // 发送消息后滚动到底部
@@ -194,7 +172,7 @@ export default function Home() {
       setIsLoading(false);
       setAbortController(null); // 清除AbortController
     }
-  }, [messages, addMessage, updateLastMessage, mode, sendStreamRequest, getSelectedModel]);
+  }, [messages, addMessage, updateLastMessage, sendStreamRequest, getSelectedModel]);
 
   // 处理打开添加模型对话框
   const handleAddModel = useCallback(() => {
@@ -239,7 +217,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 scrollbar-hide">
       <header className="p-4 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-xl font-semibold">Ollama 助手 ({mode === 'chat' ? '对话' : 'JSON 分析'})</h1>
+        <h1 className="text-xl font-semibold">Ollama 助手</h1>
         
         <div className="flex items-center gap-3">
           {/* 模型选择器 */}
@@ -261,15 +239,6 @@ export default function Home() {
               </div>
             )}
           </div>
-          
-          {/* 模式切换按钮 */}
-          <button
-            onClick={() => setMode(prev => prev === 'chat' ? 'json_analysis' : 'chat')}
-            className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
-            disabled={isLoading} // 在加载时禁用切换
-          >
-            切换到 {mode === 'chat' ? 'JSON 分析' : '对话'} 模式
-          </button>
         </div>
       </header>
 
