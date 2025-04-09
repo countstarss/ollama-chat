@@ -47,9 +47,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
   return (
     <form 
       onSubmit={handleSubmit} 
-      className={`fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 
-      hover:scale-[1.02] transition-all duration-300
-      `}
+      className="w-[80vw] max-w-4xl mx-auto rounded-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
     >
       <div className="flex items-center space-x-2">
         <textarea
@@ -66,7 +64,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           <button
             type="button"
             onClick={onAbort}
-              className="px-4 py-2 bg-red-400 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ring-inset hover:scale-[1.02] transition-all duration-300"
+            className="px-4 py-2 bg-red-400 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ring-inset hover:scale-[1.02] transition-all duration-300"
           >
             暂停
           </button>

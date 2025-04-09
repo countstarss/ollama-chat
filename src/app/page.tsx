@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { ChatWindow, ChatWindowHandle } from '@/components/ChatWindow';
-import { ChatInput } from '@/components/ChatInput';
-import { ApiRequestBody, ApiTaskType, ModelGenerationSettings } from '@/lib/types';
-import { DisplayMessage } from '@/components/ChatMessage';
+import { ChatWindow, ChatWindowHandle } from '@/components/chat/ChatWindow';
+import { ApiRequestBody, ApiTaskType } from '@/lib/types';
+import { DisplayMessage } from '@/components/chat/ChatMessage';
 import { v4 as uuidv4 } from 'uuid';
 import { useStreamResponse } from '@/hooks/useStreamResponse';
 import { useModelConfig, ModelConfig } from '@/hooks/useModelConfig';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { ModelEditDialog } from '@/components/ui/ModelEditDialog';
 import { ModelSettings, ModelSettingsData, DEFAULT_SETTINGS } from '@/components/ui/ModelSettings';
-import { Settings } from 'lucide-react';
+import { Settings, Menu } from 'lucide-react';
+import { useSidebar } from '@/components/context/sidebar-context';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -43,6 +44,8 @@ export default function Home() {
   
   // 使用新实现的hook
   const { sendStreamRequest } = useStreamResponse();
+
+  const { toggleSidebar, isCollapsed } = useSidebar();
 
   // 从本地存储加载模型设置
   useEffect(() => {
@@ -253,8 +256,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 scrollbar-hide">
-      <header className="p-4 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-xl font-semibold">Ollama 助手</h1>
+      <header className="p-2 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8">
+            <Menu className="h-4 w-4" />
+          </Button>
+          {
+            isCollapsed && (
+              <h1 className="text-xl font-semibold">Ollama 助手</h1>
+            )
+          }
+        </div>
         
         <div className="flex items-center gap-3">
           {/* 模型选择器 */}
@@ -292,12 +304,9 @@ export default function Home() {
       <ChatWindow 
         messages={messages} 
         ref={chatWindowRef}
-      />
-
-      <ChatInput 
-        onSendMessage={handleSendMessage} 
-        onAbort={handleAbort} 
-        isLoading={isLoading} 
+        onSendMessage={handleSendMessage}
+        onAbort={handleAbort}
+        isLoading={isLoading}
       />
       
       {/* 模型编辑对话框 */}

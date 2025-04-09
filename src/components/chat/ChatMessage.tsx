@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'; 
 import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; 
-import { CopyButton } from './ui/CopyButton';
+import { CopyButton } from '../ui/CopyButton';
 import Image from 'next/image';
 
 // 扩展消息类型以包含思考过程

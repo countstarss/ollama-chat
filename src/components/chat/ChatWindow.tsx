@@ -3,11 +3,15 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { ChatMessage, DisplayMessage } from './ChatMessage';
 import { ChevronDown } from 'lucide-react';
-import { FloatingSidebar } from './ui/FloatingSidebar';
+import { FloatingSidebar } from '../ui/FloatingSidebar';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { ChatInput } from './ChatInput';
 
 interface ChatWindowProps {
   messages: DisplayMessage[];
+  onSendMessage: (message: string) => void;
+  onAbort?: () => void;
+  isLoading: boolean;
 }
 
 // 定义暴露给父组件的方法接口
@@ -17,7 +21,7 @@ export interface ChatWindowHandle {
 
 // 使用forwardRef包装组件
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, ref) => {
-  const { messages } = props;
+  const { messages, onSendMessage, onAbort, isLoading } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previousMessagesLengthRef = useRef(0);
@@ -218,47 +222,58 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   };
 
   return (
-    <div 
-      ref={containerRef}
-      className="flex-grow p-4 overflow-y-auto space-y-4 message-list relative scrollbar-hide pb-20"
-    >
-      {messages.map((msg) => (
-        <ChatMessage 
-          key={msg.id}
-          message={msg} 
-          isActive={msg.id === activeMessageId}
-          onInView={(isInView) => handleMessageInView(isInView, msg)}
+    <div className="relative flex flex-col flex-grow overflow-hidden">
+      <div 
+        ref={containerRef}
+        className="flex-grow p-4 overflow-y-auto space-y-4 message-list relative scrollbar-hide pb-24"
+      >
+        {messages.map((msg) => (
+          <ChatMessage 
+            key={msg.id}
+            message={msg} 
+            isActive={msg.id === activeMessageId}
+            onInView={(isInView) => handleMessageInView(isInView, msg)}
+          />
+        ))}
+        
+        {/* 空div用于滚动目标 */}
+        <div ref={messagesEndRef} />
+        
+        {/* 返回底部按钮 */}
+        {showScrollButton && (
+          <div 
+            className="fixed bottom-24 right-6 bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all z-10"
+            onClick={scrollToBottom}
+            aria-label="滚动到最新消息"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </div>
+        )}
+        
+        {/* 集成了大纲的侧边悬浮栏 */}
+        {messages.length > 0 && (
+          <FloatingSidebar 
+            onMark={handleToggleBookmark}
+            isMarked={isCurrentMessageMarked()}
+            hasPrevious={hasPreviousMessage}
+            hasNext={hasNextMessage}
+            onPrevious={goToPreviousMessage}
+            onNext={goToNextMessage}
+            markedMessages={markedMessages}
+            onJumpToMessage={scrollToMessage}
+            onSaveBookmark={handleSaveBookmark}
+          />
+        )}
+      </div>
+      
+      {/* 集成聊天输入框 */}
+      <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center px-4 pb-6 pt-2 z-10">
+        <ChatInput 
+          onSendMessage={onSendMessage} 
+          onAbort={onAbort} 
+          isLoading={isLoading}
         />
-      ))}
-      
-      {/* 空div用于滚动目标 */}
-      <div ref={messagesEndRef} />
-      
-      {/* 返回底部按钮 */}
-      {showScrollButton && (
-        <div 
-          className="fixed bottom-24 right-6 bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all z-10"
-          onClick={scrollToBottom}
-          aria-label="滚动到最新消息"
-        >
-          <ChevronDown className="w-5 h-5" />
-        </div>
-      )}
-      
-      {/* 集成了大纲的侧边悬浮栏 */}
-      {messages.length > 0 && (
-        <FloatingSidebar 
-          onPrevious={goToPreviousMessage}
-          onNext={goToNextMessage}
-          onMark={handleToggleBookmark}
-          onSaveBookmark={handleSaveBookmark}
-          isMarked={isCurrentMessageMarked()}
-          hasPrevious={hasPreviousMessage}
-          hasNext={hasNextMessage}
-          markedMessages={markedMessages}
-          onJumpToMessage={scrollToMessage}
-        />
-      )}
+      </div>
     </div>
   );
 });
