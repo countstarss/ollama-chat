@@ -4,9 +4,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ChatWindow, ChatWindowHandle } from '@/components/ChatWindow';
 import { ChatInput } from '@/components/ChatInput';
 import { ApiRequestBody, ApiTaskType } from '@/lib/types';
-import { DisplayMessage } from '@/components/ChatMessage'; // 导入扩展后的类型
+import { DisplayMessage } from '@/components/ChatMessage';
 import { v4 as uuidv4 } from 'uuid';
 import { useStreamResponse } from '@/hooks/useStreamResponse';
+import { useModelConfig, ModelConfig } from '@/hooks/useModelConfig';
+import { ModelSelector } from '@/components/ui/ModelSelector';
+import { ModelEditDialog } from '@/components/ui/ModelEditDialog';
 
 type InteractionMode = "chat" | "json_analysis";
 
@@ -15,12 +18,33 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mode, setMode] = useState<InteractionMode>("chat");
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  
+  // 模型相关状态
+  const [isModelDialogOpen, setIsModelDialogOpen] = useState(false);
+  const [editingModelId, setEditingModelId] = useState<string | null>(null);
+  const [modelError, setModelError] = useState<string | null>(null); // 添加模型错误状态
+
+  // 使用模型配置hook
+  const { 
+    models, 
+    selectedModelId, 
+    getSelectedModel, 
+    addModel, 
+    updateModel, 
+    deleteModel, 
+    selectModel 
+  } = useModelConfig();
 
   // 添加对ChatWindow的引用 - 修改为正确的类型
   const chatWindowRef = useRef<ChatWindowHandle>(null);
   
   // 使用新实现的hook
   const { sendStreamRequest } = useStreamResponse();
+
+  // 当选择模型更改时，清除错误状态
+  useEffect(() => {
+    setModelError(null);
+  }, [selectedModelId]);
 
   const addMessage = useCallback((message: Omit<DisplayMessage, 'id'>) => {
     setMessages((prev) => [...prev, { ...message, id: uuidv4() }]);
@@ -60,6 +84,9 @@ export default function Home() {
   }, [abortController, updateLastMessage]);
 
   const handleSendMessage = useCallback(async (userInput: string) => {
+    // 清除任何之前的错误
+    setModelError(null);
+    
     const userMessage: DisplayMessage = { id: uuidv4(), role: 'user', content: userInput };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
@@ -67,6 +94,10 @@ export default function Home() {
     // 创建新的AbortController
     const controller = new AbortController();
     setAbortController(controller);
+
+    // 获取当前选中的模型
+    const selectedModel = getSelectedModel();
+    console.log(`使用模型发送消息: ${selectedModel.name} (${selectedModel.modelId})`);
 
     let requestBody: ApiRequestBody;
     let currentTask: ApiTaskType;
@@ -79,7 +110,11 @@ export default function Home() {
         if (typeof parsedJson.content !== 'string') {
           throw new Error('Input JSON must contain a "content" field (string).');
         }
-        requestBody = { task: currentTask, payload: parsedJson };
+        requestBody = { 
+          task: currentTask, 
+          payload: parsedJson,
+          model: selectedModel.modelId // 传递选中的模型ID
+        };
       } catch (e) {
          console.error("Invalid JSON input:", e);
          addMessage({ role: 'error', content: `输入不是有效的 JSON 或缺少 "content" 字段。\n错误: ${e instanceof Error ? e.message : String(e)}` });
@@ -94,7 +129,11 @@ export default function Home() {
            .filter(m => m.role === 'user' || m.role === 'assistant') // 只发送用户和助手消息
            .map(m => ({ role: m.role, content: m.mainContent ?? m.content })); // 发送最终内容
        historyToSend.push({role: 'user', content: userInput});
-      requestBody = { task: currentTask, payload: historyToSend };
+      requestBody = { 
+        task: currentTask, 
+        payload: historyToSend,
+        model: selectedModel.modelId // 传递选中的模型ID
+      };
     }
 
     // --- 添加助手消息占位符 ---
@@ -106,33 +145,132 @@ export default function Home() {
 
     try {
       // 使用新的useStreamResponse hook处理请求
-      await sendStreamRequest(
+      const success = await sendStreamRequest(
         requestBody, 
         (updates: Partial<DisplayMessage>) => updateLastMessage(() => updates),
         controller
       );
       
+      if (!success) {
+        console.error("流式请求未能成功完成");
+      }
+      
       // 响应完成后再次滚动到底部
       setTimeout(() => chatWindowRef.current?.scrollToBottom(), 100);
     } catch (error) {
-      console.error('Error in handleSendMessage:', error);
+      console.error('消息发送错误:', error);
+      
+      // 处理模型特定错误
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // 检查是否是模型相关错误
+      const isModelError = 
+        errorMessage.includes('模型') || 
+        errorMessage.includes('model') ||
+        errorMessage.includes('找不到') || 
+        errorMessage.includes('not found');
+      
+      if (isModelError) {
+        // 设置模型错误状态，用于UI显示
+        setModelError(`模型 "${selectedModel.modelId}" 可能不可用。错误: ${errorMessage}`);
+        
+        // 向聊天添加错误消息
+        updateLastMessage(() => ({
+          role: 'error',
+          content: '',
+          mainContent: `模型错误: ${errorMessage}\n\n请尝试选择其他模型或检查Ollama服务是否正常运行。`,
+          isThinkingComplete: true,
+        }));
+      } else {
+        // 处理一般错误
+        updateLastMessage(() => ({
+          role: 'error',
+          content: '',
+          mainContent: `发送消息错误: ${errorMessage}`,
+          isThinkingComplete: true,
+        }));
+      }
     } finally {
       setIsLoading(false);
       setAbortController(null); // 清除AbortController
     }
-  }, [messages, addMessage, updateLastMessage, mode, sendStreamRequest]);
+  }, [messages, addMessage, updateLastMessage, mode, sendStreamRequest, getSelectedModel]);
+
+  // 处理打开添加模型对话框
+  const handleAddModel = useCallback(() => {
+    setEditingModelId(null);
+    setIsModelDialogOpen(true);
+  }, []);
+
+  // 处理编辑模型
+  const handleEditModel = useCallback((id: string) => {
+    setEditingModelId(id);
+    setIsModelDialogOpen(true);
+  }, []);
+
+  // 处理保存模型
+  const handleSaveModel = useCallback((modelData: Omit<ModelConfig, 'id'>) => {
+    if (editingModelId) {
+      updateModel(editingModelId, modelData);
+    } else {
+      const newId = addModel(modelData);
+      selectModel(newId);
+    }
+    setIsModelDialogOpen(false);
+    
+    // 添加模型后清除任何之前的错误
+    setModelError(null);
+  }, [editingModelId, addModel, updateModel, selectModel]);
+
+  // 获取编辑模型的初始数据
+  const getModelForEditing = useCallback(() => {
+    if (!editingModelId) return undefined;
+    
+    const model = models.find(m => m.id === editingModelId);
+    if (!model) return undefined;
+    
+    return {
+      name: model.name,
+      modelId: model.modelId,
+      description: model.description
+    };
+  }, [editingModelId, models]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 scrollbar-hide">
       <header className="p-4 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
         <h1 className="text-xl font-semibold">Ollama 助手 ({mode === 'chat' ? '对话' : 'JSON 分析'})</h1>
-        <button
-          onClick={() => setMode(prev => prev === 'chat' ? 'json_analysis' : 'chat')}
-          className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
-          disabled={isLoading} // 在加载时禁用切换
-        >
-          切换到 {mode === 'chat' ? 'JSON 分析' : '对话'} 模式
-        </button>
+        
+        <div className="flex items-center gap-3">
+          {/* 模型选择器 */}
+          <div className="relative">
+            <ModelSelector 
+              models={models}
+              selectedModelId={selectedModelId}
+              onSelectModel={selectModel}
+              onAddModel={handleAddModel}
+              onEditModel={handleEditModel}
+              onDeleteModel={deleteModel}
+              isLoading={isLoading}
+            />
+            
+            {/* 模型错误提示 */}
+            {modelError && (
+              <div className="absolute top-full left-0 mt-1 p-2 bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-300 text-xs rounded-md border border-red-200 dark:border-red-800 max-w-xs z-30">
+                {modelError}
+              </div>
+            )}
+          </div>
+          
+          {/* 模式切换按钮 */}
+          <button
+            onClick={() => setMode(prev => prev === 'chat' ? 'json_analysis' : 'chat')}
+            className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
+            disabled={isLoading} // 在加载时禁用切换
+          >
+            切换到 {mode === 'chat' ? 'JSON 分析' : '对话'} 模式
+          </button>
+        </div>
       </header>
 
       <ChatWindow 
@@ -144,6 +282,15 @@ export default function Home() {
         onSendMessage={handleSendMessage} 
         onAbort={handleAbort} 
         isLoading={isLoading} 
+      />
+      
+      {/* 模型编辑对话框 */}
+      <ModelEditDialog 
+        isOpen={isModelDialogOpen}
+        onClose={() => setIsModelDialogOpen(false)}
+        onSave={handleSaveModel}
+        initialData={getModelForEditing()}
+        isEditing={!!editingModelId}
       />
     </div>
   );

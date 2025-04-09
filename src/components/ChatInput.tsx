@@ -45,14 +45,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
 
 
   return (
-    <form onSubmit={handleSubmit} className="fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 ">
+    <form 
+      onSubmit={handleSubmit} 
+      className={`fixed bottom-4 left-0 right-0 w-[80vw] mx-auto rounded-full  p-3 border-t border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 
+      ${isLoading ? 'shadow-lg shadow-white/50' : ''}
+      hover:scale-[1.02] transition-all duration-300
+      `}
+    >
       <div className="flex items-center space-x-2">
         <textarea
           ref={textareaRef}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="输入消息或 JSON (切换模式后)..."
+          placeholder="..."
           className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px]" 
           rows={1}
           disabled={isLoading}
@@ -61,7 +67,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           <button
             type="button"
             onClick={onAbort}
-            className="px-4 py-2 bg-red-400 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              className="px-4 py-2 bg-red-400 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ring-inset hover:scale-[1.02] transition-all duration-300"
           >
             暂停
           </button>
@@ -69,7 +75,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 hover:scale-[1.02] transition-all duration-300 ring-inset"
           >
             {isLoading ? '发送中...' : '发送'}
           </button>
