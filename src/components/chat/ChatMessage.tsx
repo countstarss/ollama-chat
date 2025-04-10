@@ -5,8 +5,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'; 
 import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; 
-import { CopyButton } from '../ui/CopyButton';
+import { CopyButton } from '../button/CopyButton';
 import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
+import { StarButton } from '../button/StarButton';
 
 // 扩展消息类型以包含思考过程
 export interface DisplayMessage extends ChatMessageType {
@@ -194,12 +195,19 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
         </div>
         {/* 消息底部的复制按钮 - 常驻显示 */}
         {contentToDisplay && contentToDisplay.trim().length > 0 && (
-            <div className="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-2">
+              <StarButton 
+                text={contentToDisplay} 
+                size="sm" 
+                variant="outline"
+                className="text-gray-400"
+                successText="已收藏消息"
+              />
               <CopyButton 
                 text={contentToDisplay} 
                 size="sm" 
-                variant="subtle"
-                className={"text-gray-400 bg-gray-800/30"}
+                variant="outline"
+                className="text-gray-400"
                 successText="已复制全部内容"
               />
             </div>

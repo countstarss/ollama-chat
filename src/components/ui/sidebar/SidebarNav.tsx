@@ -8,7 +8,8 @@ import {
   NotebookTabs,
   Plus,
   StarIcon,
-  RefreshCw
+  RefreshCw,
+  Star
 } from "lucide-react"
 import {
   Collapsible,
@@ -257,52 +258,6 @@ export function SidebarNav() {
       </Collapsible>
 
       <Collapsible
-        // MARK: collect
-        open={openCollect}
-        onOpenChange={setOpenCollect}
-        className="mt-3"
-      >
-      <div className="flex items-center justify-between mb-1">
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            className="w-full justify-between pl-2 mb-1 font-normal"
-          >
-            <div className="flex items-center gap-2">
-              <StarIcon className="h-4 w-4" />
-              <span>收藏</span>
-            </div>
-            <ChevronRight
-              className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-200",
-                openCollect ? "rotate-90" : ""
-              )}
-            />
-          </Button>
-        </CollapsibleTrigger>
-        {/* 添加刷新按钮 */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8"
-            onClick={handleRefreshChats}
-            disabled={isRefreshing}
-            title="刷新最近聊天列表"
-          >
-            <RefreshCw className={cn(
-              "h-4 w-4",
-              isRefreshing && "animate-spin"
-            )} />
-          </Button>
-      </div>
-        <CollapsibleContent className="pl-2 space-y-1">
-          <div className="text-sm text-muted-foreground px-2 py-1">
-            暂无收藏的对话
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      <Collapsible
         // MARK: Notes
         open={openNotes}
         onOpenChange={setOpenNotes}
@@ -335,6 +290,11 @@ export function SidebarNav() {
       
       {/* 其他导航项 */}
       <div className="mt-4">
+        <SidebarNavItem
+          icon={<Star className="h-4 w-4" />}
+          label="收藏"
+          href="/star"
+        />
         {/* <SidebarNavItem
           icon={<BookOpen className="h-4 w-4" />}
           label="文档"
