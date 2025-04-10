@@ -57,15 +57,15 @@ export function SelectionToolbar() {
 
   return (
     <motion.div 
-      className="w-[50vw] max-w-4xl mx-auto mb-4"
+      className="w-[50vw] max-w-4xl mx-auto"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 20, opacity: 0 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-2 flex items-center gap-2 overflow-x-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-4 flex items-center gap-2 overflow-x-auto">
         {/* 显示选择计数 */}
-        <div className="flex items-center bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
+        <div className="flex items-center bg-blue-100 dark:bg-blue-900 px-3 py-2 rounded-full">
           <Layers className="w-4 h-4 mr-1 text-blue-600 dark:text-blue-400" />
           <span className="text-sm font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
             已选择 {selectionCount} 条消息

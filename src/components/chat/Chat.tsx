@@ -18,10 +18,6 @@ import { v4 as uuidv4 } from 'uuid';
 import toastService from '@/services/toastService';
 import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
 import { SelectionModeToggle } from './SelectionModeToggle';
-import { SelectionToolbar } from './SelectionToolbar';
-import { useSelectionStore } from '@/store/useSelectionStore';
-import { ChatInput } from './ChatInput';
-import { AnimatePresence, motion } from 'framer-motion';
 
 export default function Chat() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -357,54 +353,7 @@ export default function Chat() {
         />
       </div>
       
-      <div className="py-2 sm:py-3 px-2 sm:px-4 bg-transparent">
-        <InputArea 
-          isLoading={isLoading}
-          onSendMessage={handleSendMessage}
-          onAbort={handleAbort}
-        />
-      </div>
     </div>
   );
 }
 
-// 新增 InputArea 组件，负责根据选择模式状态显示不同的输入区域
-interface InputAreaProps {
-  isLoading: boolean;
-  onSendMessage: (message: string) => void;
-  onAbort?: () => void;
-}
-
-function InputArea({ isLoading, onSendMessage, onAbort }: InputAreaProps) {
-  const { isSelectionMode } = useSelectionStore();
-  
-  return (
-    <AnimatePresence mode="wait">
-      {isSelectionMode ? (
-        <motion.div
-          key="selection-toolbar"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.2 }}
-        >
-          <SelectionToolbar />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="chat-input"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChatInput 
-            onSendMessage={onSendMessage}
-            onAbort={onAbort}
-            isLoading={isLoading}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}

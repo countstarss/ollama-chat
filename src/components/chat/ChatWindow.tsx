@@ -5,6 +5,7 @@ import { ChatMessage, DisplayMessage } from './ChatMessage';
 import { ChevronDown } from 'lucide-react';
 import { FloatingSidebar } from '../ui/FloatingSidebar';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { InputArea } from './InputArea';
 
 interface ChatWindowProps {
   messages: DisplayMessage[];
@@ -21,7 +22,7 @@ export interface ChatWindowHandle {
 
 // 使用forwardRef包装组件
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, ref) => {
-  const { messages, onBookmarkChange } = props;
+  const { messages, onBookmarkChange, isLoading, onSendMessage, onAbort } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previousMessagesLengthRef = useRef(0);
@@ -253,7 +254,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       {/* 消息列表 */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent relative"
       >
         <div className="w-full pb-4 pt-4">
           {messages.map((message) => (
@@ -282,12 +283,20 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
           onSaveBookmark={handleSaveBookmark}
         />
       )}
+
+      <div className='py-2 mx-auto absolute bottom-4 left-0 right-0'>
+        <InputArea
+          isLoading={isLoading}
+          onSendMessage={onSendMessage}
+          onAbort={onAbort}
+        />
+      </div>
       
       {/* 滚动到底部按钮 */}
       {showScrollButton && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-4 right-4 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-600 transition-colors duration-200 z-10"
+          className="absolute bottom-24 right-8 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-200 z-10"
         >
           <ChevronDown className="h-5 w-5" />
         </button>

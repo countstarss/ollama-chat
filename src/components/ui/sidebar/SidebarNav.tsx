@@ -7,7 +7,6 @@ import {
   ChevronRight,
   NotebookTabs,
   Plus,
-  StarIcon,
   RefreshCw,
   Star
 } from "lucide-react"
@@ -25,7 +24,6 @@ import eventService, { AppEvent } from "@/services/eventService"
 
 export function SidebarNav() {
   const [openRecently, setOpenRecently] = useState(true)
-  const [openCollect, setOpenCollect] = useState(true)
   const [openNotes, setOpenNotes] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   
