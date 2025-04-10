@@ -16,6 +16,7 @@ export interface DisplayMessage extends ChatMessageType {
   mainContent?: string; // 用于流式接收
   summary?: string;    // 消息摘要
   isMarked?: boolean;  // 是否被标记
+  isStarred?: boolean; // 是否被收藏
 }
 
 interface ChatMessageProps {
@@ -26,10 +27,18 @@ interface ChatMessageProps {
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = false, onInView }) => {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
+  const [messageStarred, setMessageStarred] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
   
   // 使用FloatingSidebar状态钩子
   const { isFloatingSidebarVisible } = useFloatingSidebar();
+
+  // 初始化收藏状态
+  useEffect(() => {
+    if (message.isStarred !== undefined) {
+      setMessageStarred(message.isStarred);
+    }
+  }, [message.isStarred]);
 
   // MARK: 自动折叠思考内容
   useEffect(() => {
@@ -64,7 +73,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
     };
   }, [message, onInView]);
 
-  // MARK: 当 isActive 变化时添加高亮动画效果
+  // MARK: 高亮动画效果
   useEffect(() => {
     if (isActive && messageRef.current) {
       // 添加高亮效果
@@ -106,8 +115,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
 
   // MARK: 最终显示的内容
   const contentToDisplay = message.mainContent ?? message.content;
+  
 
-  // Markdown 组件配置，包括代码高亮
+  // MARK: Markdown配置
   const markdownComponents = {
     code({ inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '');
@@ -202,6 +212,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
                 variant="outline"
                 className="text-gray-400"
                 successText="已收藏消息"
+                isStarred={messageStarred}
+                setIsStarred={setMessageStarred}
               />
               <CopyButton 
                 text={contentToDisplay} 

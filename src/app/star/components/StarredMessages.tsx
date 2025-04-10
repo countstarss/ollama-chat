@@ -33,7 +33,7 @@ export function StarredMessages() {
   // 处理搜索
   const handleSearch = useCallback(async (query: string, dateRange: { from?: Date; to?: Date }) => {
     try {
-      let timeRange: { start?: number; end?: number } = {};
+      const timeRange: { start?: number; end?: number } = {};
       
       if (dateRange.from) {
         timeRange.start = dateRange.from.getTime();
@@ -81,7 +81,7 @@ export function StarredMessages() {
         addSuffix: true,
         locale: zhCN 
       });
-    } catch (error) {
+    } catch {
       return '未知时间';
     }
   }, []);
@@ -90,7 +90,7 @@ export function StarredMessages() {
   const formatFullTime = useCallback((timestamp: number) => {
     try {
       return format(new Date(timestamp), 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN });
-    } catch (error) {
+    } catch {
       return '未知时间';
     }
   }, []);

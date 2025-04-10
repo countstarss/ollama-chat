@@ -13,21 +13,24 @@ interface StarButtonProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'subtle' | 'outline';
   tags?: string[];
+  isStarred?: boolean;
+  setIsStarred?: (isStarred: boolean) => void;
 }
 
 export function StarButton({
   text,
   className,
-  successText = '已收藏',
-  errorText = '收藏失败',
+  // successText = '已收藏',
+  // errorText = '收藏失败',
   size = 'md',
   variant = 'default',
   tags = [],
+  isStarred = false,
+  setIsStarred = () => {},
 }: StarButtonProps) {
   // 使用Zustand store
   const { addStar, checkIfStarred } = useStarStore();
   const [isStarring, setIsStarring] = useState(false);
-  const [isStarred, setIsStarred] = useState(false);
 
   // 组件加载时检查是否已收藏
   useEffect(() => {
@@ -37,7 +40,7 @@ export function StarButton({
     };
     
     checkStarStatus();
-  }, [checkIfStarred, text]);
+  }, [checkIfStarred, text, setIsStarred]);
 
   // 点击处理
   const handleClick = async (e: React.MouseEvent) => {
@@ -78,6 +81,7 @@ export function StarButton({
     <button
       onClick={handleClick}
       className={cn(
+        isStarred ? 'fill-yellow-500' : '',
         'rounded-md flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30',
         sizeClasses[size],
         variantClasses[variant],
@@ -92,7 +96,7 @@ export function StarButton({
       {isStarring ? (
         <Loader2 className="h-full w-full animate-spin" />
       ) : (
-        <Star className="h-full w-full" />
+        isStarred ? <Star className="h-full w-full fill-yellow-500" /> : <Star className="h-full w-full" />
       )}
     </button>
   );

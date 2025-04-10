@@ -48,7 +48,7 @@ export function StarredMessageCard({
       <CardContent className="p-4">
         <div className="whitespace-pre-wrap">
           {message.content.length > 300
-            ? `${message.content.substring(0, 300)}...`
+            ? `${message.content.substring(0, 200)}...`
             : message.content}
         </div>
       </CardContent>
