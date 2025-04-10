@@ -112,7 +112,6 @@ export const deleteChat = async (chatId: string): Promise<void> => {
   try {
     const db = await openDatabase();
     await db.delete(STORE_NAME, chatId);
-    toastService.success(`聊天会话已删除: ${chatId}`);
   } catch (error) {
     toastService.error(`删除聊天会话失败 ${chatId}`);
     // 尝试从localStorage删除
@@ -130,28 +129,42 @@ export const updateChatName = async (
   chatId: string,
   newName: string
 ): Promise<void> => {
+  console.log(`[chatStorage] 开始更新聊天名称: ${chatId}, 新名称: ${newName}`);
   try {
     const db = await openDatabase();
     const chat = await db.get(STORE_NAME, chatId);
     if (chat) {
+      console.log(
+        `[chatStorage] 找到聊天记录: ${chatId}, 当前名称: ${chat.name}`
+      );
       chat.name = newName;
       chat.lastUpdated = Date.now();
       await db.put(STORE_NAME, chat);
-      toastService.success(`聊天会话名称已更新: ${chatId}`);
+      console.log(`[chatStorage] 聊天名称已更新并保存: ${chatId}`);
+      toastService.success(`聊天会话名称已更新`);
+    } else {
+      console.warn(`[chatStorage] 未找到聊天记录: ${chatId}`);
     }
   } catch (error) {
-    toastService.error(`更新聊天会话名称失败 ${chatId}:`, error);
+    console.error(`[chatStorage] 更新聊天会话名称失败 ${chatId}:`, error);
+    toastService.error("更新聊天会话名称失败");
+
     // 尝试从localStorage更新
     try {
+      console.log(`[chatStorage] 尝试从localStorage更新聊天名称: ${chatId}`);
       const chatJson = localStorage.getItem(`chat_${chatId}`);
       if (chatJson) {
         const chat = JSON.parse(chatJson);
         chat.name = newName;
         chat.lastUpdated = Date.now();
         localStorage.setItem(`chat_${chatId}`, JSON.stringify(chat));
+        console.log(`[chatStorage] 从localStorage更新聊天名称成功: ${chatId}`);
+      } else {
+        console.warn(`[chatStorage] localStorage中未找到聊天记录: ${chatId}`);
       }
     } catch (e) {
-      console.error("从localStorage更新也失败:", e);
+      console.error("[chatStorage] 从localStorage更新也失败:", e);
+      throw e; // 重新抛出错误以便调用者处理
     }
   }
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import {
@@ -32,6 +32,14 @@ export function SidebarRecentItem({
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newName, setNewName] = useState(label);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [displayLabel, setDisplayLabel] = useState(label);
+  
+  // 当外部 label 变化时更新内部状态
+  useEffect(() => {
+    console.log(`[SidebarRecentItem] 标题已更新: ${id}, 新标题: ${label}`);
+    setDisplayLabel(label);
+    setNewName(label);
+  }, [id, label]);
 
   const handleRename = () => {
     if (onRename && newName.trim()) {
@@ -51,7 +59,7 @@ export function SidebarRecentItem({
     <>
       <div
         className={cn(
-          "flex items-center justify-between w-[calc(100%-1rem)] p-2 rounded-md transition-colors ml-4",
+          "flex items-center justify-between w-[calc(100%-1rem)] p-2 rounded-md transition-colors ml-4 group",
           isActive 
             ? "bg-accent text-accent-foreground" 
             : "hover:bg-accent/50 hover:text-accent-foreground"
@@ -62,7 +70,7 @@ export function SidebarRecentItem({
           onClick={onClick}
         >
           <MessageSquare className="h-4 w-4 shrink-0" />
-          <span className="truncate">{label}</span>
+          <span className="truncate">{displayLabel}</span>
         </button>
         
         <DropdownMenu>

@@ -99,11 +99,50 @@
   }
 }
 
+/* 添加滚动条隐藏样式 */
 .scrollbar-hide {
-  scrollbar-width: none;
-  /* Firefox */
   -ms-overflow-style: none;
-  /* IE/Edge */
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 添加细滚动条样式 */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  display: block;
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.4);
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.7);
+}
+
+/* 暗模式下的细滚动条样式 */
+@media (prefers-color-scheme: dark) {
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.3);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(150, 150, 150, 0.5);
+  }
 }
 
 :root {
@@ -188,14 +227,4 @@
 /* 侧边栏收起时的主内容区域样式 */
 .sidebar-collapsed main {
   margin-left: 0 !important;
-}
-
-/* 添加滚动条隐藏样式 */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, X, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import toastService from '@/services/toastService';
 
 interface EditableChatTitleProps {
   title: string;
@@ -33,15 +34,32 @@ export function EditableChatTitle({
     setEditedTitle(title || "未命名聊天");
   };
   
-  // 处理保存
+  // MARK: 处理标题保存
   const handleSave = () => {
     const trimmedTitle = editedTitle.trim();
     if (trimmedTitle) {
+      console.log(`[EditableChatTitle] 保存新标题: ${trimmedTitle}`);
+      
+      // 如果标题没有变化，不执行重命名操作
+      if (trimmedTitle === title) {
+        console.log('[EditableChatTitle] 标题未变化，不执行重命名');
+        setIsEditing(false);
+        return;
+      }
+      
+      // 调用外部重命名函数
       onRename(trimmedTitle);
+      console.log('[EditableChatTitle] 重命名回调已调用');
     } else {
       // 如果用户输入空标题，自动重置为"未命名聊天"
       setEditedTitle("未命名聊天");
-      onRename("未命名聊天");
+      console.log('[EditableChatTitle] 标题为空，重置为"未命名聊天"');
+      
+      // 如果当前标题已经是"未命名聊天"，不执行重命名
+      if (title !== "未命名聊天") {
+        onRename("未命名聊天");
+        console.log('[EditableChatTitle] 重命名回调已调用 (重置为默认标题)');
+      }
     }
     setIsEditing(false);
   };

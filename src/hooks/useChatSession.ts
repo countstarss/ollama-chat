@@ -12,6 +12,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { ModelConfig } from "@/hooks/useModelConfig";
 import toastService from "@/services/toastService";
+import eventService from "@/services/eventService";
 
 export function useChatSession() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -58,6 +59,27 @@ export function useChatSession() {
     setCurrentChatId(newChatId);
     setChatName("未命名");
     setHasNamedCurrentChat(false);
+
+    // 创建新的空聊天会话并立即保存
+    const newChat: ChatSession = {
+      id: newChatId,
+      name: "未命名",
+      lastUpdated: Date.now(),
+      messages: [],
+    };
+
+    // 保存到数据库
+    saveChat(newChat)
+      .then(() => {
+        // 更新最近聊天列表
+        getAllChats().then((chats) => {
+          setRecentChats(chats);
+        });
+      })
+      .catch((error) => {
+        console.error("创建新聊天失败:", error);
+        toastService.error("创建新聊天失败");
+      });
 
     // 导航到新聊天
     router.push(`/?chatId=${newChatId}`);
@@ -146,21 +168,38 @@ export function useChatSession() {
   // MARK: renameChat
   // NOTE: 重命名聊天
   const renameChat = useCallback(
-    async (chatId: string, newName: string) => {
+    async (chatId: string, newName: string): Promise<void> => {
+      console.log(
+        `[useChatSession] 开始重命名聊天: ${chatId}, 新名称: ${newName}`
+      );
       try {
         await updateChatName(chatId, newName);
+        console.log(`[useChatSession] 更新聊天名称成功: ${chatId}`);
 
         if (chatId === currentChatId) {
+          console.log(`[useChatSession] 更新当前聊天标题: ${newName}`);
           setChatName(newName);
           setHasNamedCurrentChat(true);
         }
 
+        // 重新加载所有聊天以更新侧边栏
+        console.log("[useChatSession] 重新加载聊天列表");
         const chats = await getAllChats();
         setRecentChats(chats);
+        console.log("[useChatSession] 已更新最近聊天列表");
+
+        // 发布聊天重命名事件
+        eventService.publish({
+          type: "CHAT_RENAMED",
+          chatId,
+          newName,
+        });
+
         toastService.success("对话已重命名");
       } catch (error) {
-        console.error(`重命名聊天失败 ${chatId}:`, error);
+        console.error(`[useChatSession] 重命名聊天失败 ${chatId}:`, error);
         toastService.error("重命名对话失败");
+        throw error; // 重新抛出错误以便调用者捕获
       }
     },
     [currentChatId]
@@ -188,6 +227,23 @@ export function useChatSession() {
     [currentChatId, createNewChat]
   );
 
+  // MARK: refreshRecentChats
+  // NOTE: 手动刷新最近聊天列表
+  const refreshRecentChats = useCallback(async () => {
+    console.log("[useChatSession] 手动刷新最近聊天列表");
+    try {
+      const chats = await getAllChats();
+      setRecentChats(chats);
+      console.log(
+        `[useChatSession] 已刷新最近聊天列表，共 ${chats.length} 个聊天`
+      );
+      return true;
+    } catch (error) {
+      console.error("[useChatSession] 刷新最近聊天列表失败:", error);
+      return false;
+    }
+  }, []);
+
   return {
     currentChatId,
     chatName,
@@ -199,5 +255,6 @@ export function useChatSession() {
     switchToChat,
     renameChat,
     removeChat,
+    refreshRecentChats,
   };
 }

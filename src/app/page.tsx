@@ -37,7 +37,8 @@ export default function Home() {
     loadChat,
     saveCurrentChat,
     createNewChat,
-    renameChat
+    renameChat,
+    refreshRecentChats
   } = useChatSession();
   
   // 追踪消息数量和生成状态
@@ -116,9 +117,27 @@ export default function Home() {
   // 处理聊天标题重命名
   const handleRenameChat = useCallback((newTitle: string) => {
     if (currentChatId) {
-      renameChat(currentChatId, newTitle);
+      console.log(`[Home] 重命名聊天: ${currentChatId}, 新标题: ${newTitle}`);
+      renameChat(currentChatId, newTitle)
+        .then(() => {
+          console.log('[Home] 聊天标题重命名成功，已同步到数据库');
+          // 手动刷新侧边栏最近聊天列表
+          return refreshRecentChats();
+        })
+        .then((success) => {
+          if (success) {
+            console.log('[Home] 侧边栏最近聊天列表已刷新');
+          } else {
+            console.warn('[Home] 侧边栏最近聊天列表刷新失败');
+          }
+        })
+        .catch((error) => {
+          console.error('[Home] 聊天标题重命名失败:', error);
+        });
+    } else {
+      console.warn('[Home] 无法重命名聊天: 当前没有活动的聊天ID');
     }
-  }, [currentChatId, renameChat]);
+  }, [currentChatId, renameChat, refreshRecentChats]);
   
   // 处理新建聊天按钮点击
   const handleNewChat = useCallback(() => {
