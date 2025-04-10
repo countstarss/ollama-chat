@@ -135,7 +135,7 @@ export function SidebarNav() {
       refreshRecentChats().catch(err => {
         console.error('[SidebarNav] 自动刷新出错:', err);
       });
-    }, 30000);
+    }, 60000);
     
     return () => {
       clearInterval(intervalId);
@@ -328,7 +328,7 @@ export function SidebarNav() {
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-2 space-y-1">
           <div className="text-sm text-muted-foreground px-2 py-1">
-            暂无收藏的对话
+            暂无笔记
           </div>
         </CollapsibleContent>
       </Collapsible>

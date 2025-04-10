@@ -21,10 +21,11 @@ export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [modelError, setModelError] = useState<string | null>(null);
+  const [isModelReady, setIsModelReady] = useState(false);
   
   // 使用hooks
   const { modelSettings } = useModelSettings();
-  const { getSelectedModel } = useModelConfig();
+  const { getSelectedModel, models } = useModelConfig();
   const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null);
   const chatWindowRef = useRef<ChatWindowHandle>(null);
   const { sendStreamRequest } = useStreamResponse();
@@ -66,6 +67,7 @@ export default function Home() {
     const model = getSelectedModel();
     if (model) {
       setSelectedModel(model);
+      setIsModelReady(true);
       console.log(`[初始化] 当前选中模型: ${model.name} (${model.modelId})`);
     }
   }, [getSelectedModel]);
@@ -170,9 +172,11 @@ export default function Home() {
     if (!selectedModel) {
       setModelError('未选择模型');
       setIsLoading(false);
+      setIsModelReady(false);
       return;
     }
     console.log(`[请求API] 模型信息: ${selectedModel.name} (${selectedModel.modelId})`);
+
     // MARK: 准备请求体
     const requestBody = prepareRequestBody(
         userInput, 
@@ -193,7 +197,6 @@ export default function Home() {
       );
       
       if (!success) {
-        console.error("流式请求未能成功完成");
         toastService.error("响应生成失败，请重试");
       }
       
@@ -219,6 +222,7 @@ export default function Home() {
       if (isModelError) {
         // 设置模型错误状态，用于UI显示
         setModelError(`模型 "${selectedModel.modelId}" 可能不可用。错误: ${errorMessage}`);
+        setIsModelReady(false);
         
         // 向聊天添加错误消息
         updateLastMessage(() => ({
@@ -229,7 +233,7 @@ export default function Home() {
         }));
         
         toastService.error(`模型 "${selectedModel.modelId}" 不可用`, {
-          description: "请尝试选择其他模型或检查 Ollama 服务是否正常运行"
+          description: "请尝试选择其他模型或检查服务是否正常运行"
         });
       } else {
         // 处理一般错误
@@ -259,11 +263,15 @@ export default function Home() {
     createAbortController,
     scrollToBottom,
     setModelError,
-    saveCurrentChat
+    saveCurrentChat,
+    setIsModelReady,
   ]);
 
   // 处理模型选择变更
   const handleModelChange = useCallback((modelId: string) => {
+    // 先将就绪状态设为false，直到确认模型可用
+    setIsModelReady(false);
+    
     // 创建一个临时的模型配置对象
     const tempModel: ModelConfig = {
       id: `temp-${Date.now()}`,
@@ -275,7 +283,11 @@ export default function Home() {
     setSelectedModel(tempModel);
     setModelError(null);
     
-    toastService.success(`已切换至模型: ${modelId}`);
+    // 模拟等待一段时间后模型就绪
+    setTimeout(() => {
+      setIsModelReady(true);
+      toastService.success(`已切换至模型: ${modelId}`);
+    }, 500);
   }, []);
 
   // MARK: 处理书签变化
@@ -307,8 +319,8 @@ export default function Home() {
         
         <div className="flex items-center gap-3">
           <ModelSelectorContainer 
-            isLoading={isLoading} 
-            onModelChange={handleModelChange} 
+            isLoading={isLoading}
+            onModelChange={handleModelChange}
           />
           <Button
             variant="outline"

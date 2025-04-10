@@ -28,24 +28,34 @@ async function validateModel(model: string): Promise<boolean> {
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
+        // 添加超时设置
+        signal: AbortSignal.timeout(5000), // 5秒超时
       }
     );
 
     if (!response.ok) {
-      console.warn(`无法验证模型 ${model}，跳过验证步骤`);
+      console.warn(`无法验证模型 ${model}，服务响应状态码: ${response.status}`);
       return true; // 如果无法获取模型列表，则假设模型有效
     }
 
-    const data = await response.json();
-    if (data.models && Array.isArray(data.models)) {
-      // 检查模型是否在列表中
-      return data.models.some((m: any) => m.name === model);
+    try {
+      const data = await response.json();
+      if (data.models && Array.isArray(data.models)) {
+        // 检查模型是否在列表中
+        const modelExists = data.models.some((m: any) => m.name === model);
+        if (!modelExists) {
+          console.warn(`模型 "${model}" 在模型列表中不存在`);
+        }
+        return modelExists;
+      }
+    } catch (parseError) {
+      console.error("解析模型列表响应失败:", parseError);
     }
 
     return true; // 如果响应格式不正确，默认返回有效
   } catch (error) {
     console.warn(`验证模型时出错: ${error}`);
-    return true; // 出现错误时，假设模型有效
+    return true; // 出现错误时，假设模型有效，避免阻止尝试
   }
 }
 
@@ -53,11 +63,11 @@ async function validateModel(model: string): Promise<boolean> {
 export async function OllamaStream(
   payload: ChatMessage[] | JsonAnalysisInput,
   model: string,
-  task: ApiTaskType, // 需要知道任务类型来构建 prompt
+  task: ApiTaskType = "general_chat", // 默认为 general_chat
   settings?: ModelGenerationSettings // 添加可选的设置参数
 ): Promise<ReadableStream<Uint8Array>> {
-  // 记录使用的模型
-  console.log(`准备使用模型: ${model || DEFAULT_MODEL}`);
+  // 记录使用的模型和任务类型
+  console.log(`准备使用模型: ${model || DEFAULT_MODEL}, 任务类型: ${task}`);
 
   // 使用实际模型或默认模型
   const selectedModel = model || DEFAULT_MODEL;
@@ -65,7 +75,12 @@ export async function OllamaStream(
   // 验证模型（如果可能）
   const isModelValid = await validateModel(selectedModel);
   if (!isModelValid) {
-    console.warn(`警告: 模型 "${selectedModel}" 可能不可用，但仍将尝试使用`);
+    console.error(
+      `警告: 模型 "${selectedModel}" 不可用，请检查模型名称是否正确`
+    );
+    throw new Error(
+      `找不到模型 "${selectedModel}"，请确保模型名称正确并已安装`
+    );
   }
 
   // 合并用户提供的设置与默认设置
@@ -74,25 +89,29 @@ export async function OllamaStream(
     : DEFAULT_GENERATION_SETTINGS;
 
   let messages: { role: string; content: string }[];
-  let temperature = finalSettings.temperature; // 使用设置中的温度
 
   // --- 根据任务类型构建不同的消息列表 ---
-
   if (!Array.isArray(payload)) {
     throw new Error(
-      "Invalid payload for general_chat task. Expecting ChatMessage[]."
+      "无效的请求数据格式。聊天任务需要 ChatMessage[] 类型的数据。"
     );
   }
+
+  // 转换消息格式
   messages = (payload as ChatMessage[]).map(({ role, content }) => ({
     role,
     content,
   }));
-  // 可以添加通用聊天 System Prompt
-  messages.unshift({
-    role: "system",
-    content:
-      "You are a helpful AI assistant. If you need to think step-by-step, use <think>...</think> tags for your reasoning before providing the final answer.",
-  });
+
+  // 添加系统消息
+  const hasSystemMessage = messages.some((msg) => msg.role === "system");
+  if (!hasSystemMessage) {
+    messages.unshift({
+      role: "system",
+      content:
+        "You are a helpful AI assistant. If you need to think step-by-step, use <think>...</think> tags for your reasoning before providing the final answer.",
+    });
+  }
 
   try {
     const controller = new AbortController();
@@ -110,9 +129,14 @@ export async function OllamaStream(
       frequency_penalty: finalSettings.frequencyPenalty,
     };
 
+    console.log(`[OllamaStream] 发送请求到 ${OLLAMA_API_URL}`);
+
     const response = await fetch(OLLAMA_API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store",
+      },
       body: JSON.stringify({
         model: selectedModel,
         messages: messages,
@@ -126,7 +150,7 @@ export async function OllamaStream(
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error("Ollama API Error Response:", errorBody);
+      console.error(`Ollama API 错误响应 (${response.status}):`, errorBody);
 
       // 对特定错误提供更详细的信息
       if (response.status === 404) {
@@ -148,6 +172,7 @@ export async function OllamaStream(
       throw new Error("Ollama API响应体为空");
     }
 
+    console.log(`[OllamaStream] 成功获取响应流，模型: ${selectedModel}`);
     // 直接返回响应体流
     return response.body;
   } catch (error) {

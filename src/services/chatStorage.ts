@@ -140,8 +140,6 @@ export const updateChatName = async (
       chat.name = newName;
       chat.lastUpdated = Date.now();
       await db.put(STORE_NAME, chat);
-      console.log(`[chatStorage] 聊天名称已更新并保存: ${chatId}`);
-      toastService.success(`聊天会话名称已更新`);
     } else {
       console.warn(`[chatStorage] 未找到聊天记录: ${chatId}`);
     }
