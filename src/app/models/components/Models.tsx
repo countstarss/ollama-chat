@@ -118,6 +118,7 @@ export default function Models() {
         </Button>
       </Link>
       <h1 className="text-2xl font-bold">模型管理</h1>
+      { activeTab === 'local' && <div className='hidden' />}
     </div>
       
       <Tabs defaultValue="local" className="w-full" onValueChange={setActiveTab}>

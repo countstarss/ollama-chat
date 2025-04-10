@@ -5,8 +5,6 @@ import { ChatMessage, DisplayMessage } from './ChatMessage';
 import { ChevronDown } from 'lucide-react';
 import { FloatingSidebar } from '../ui/FloatingSidebar';
 import { useBookmarks } from '@/hooks/useBookmarks';
-import { ChatInput } from './ChatInput';
-import { cn } from '@/lib/utils';
 
 interface ChatWindowProps {
   messages: DisplayMessage[];
@@ -23,7 +21,7 @@ export interface ChatWindowHandle {
 
 // 使用forwardRef包装组件
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, ref) => {
-  const { messages, onSendMessage, onAbort, isLoading, onBookmarkChange } = props;
+  const { messages, onBookmarkChange } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previousMessagesLengthRef = useRef(0);
@@ -201,142 +199,99 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       onBookmarkChange(updatedMessages);
     }
   };
-  
-  // MARK: 跳转到上一条
+
+  // 判断当前活动消息是否已标记
+  const isCurrentMessageMarked = () => {
+    return activeMessageId ? isMessageMarked(activeMessageId) : false;
+  };
+
+  // 获取导航状态
+  const currentMessageIndex = activeMessageId ? messages.findIndex(m => m.id === activeMessageId) : -1;
+  const hasPreviousMessage = currentMessageIndex > 0;
+  const hasNextMessage = currentMessageIndex >= 0 && currentMessageIndex < messages.length - 1;
+
+  // 导航到上一条消息
   const goToPreviousMessage = () => {
-    if (!activeMessageId) return;
+    if (!hasPreviousMessage) return;
     
-    const activeIndex = messages.findIndex(m => m.id === activeMessageId);
-    if (activeIndex > 0) {
-      const prevMessage = messages[activeIndex - 1];
-      scrollToMessage(prevMessage.id);
-    }
+    const prevMessageId = messages[currentMessageIndex - 1].id;
+    scrollToMessage(prevMessageId);
   };
-  
-  // MARK: 跳转到下一条
+
+  // 导航到下一条消息
   const goToNextMessage = () => {
-    if (!activeMessageId) return;
+    if (!hasNextMessage) return;
     
-    const activeIndex = messages.findIndex(m => m.id === activeMessageId);
-    if (activeIndex < messages.length - 1) {
-      const nextMessage = messages[activeIndex + 1];
-      scrollToMessage(nextMessage.id);
-    }
+    const nextMessageId = messages[currentMessageIndex + 1].id;
+    scrollToMessage(nextMessageId);
   };
-  
-  // MARK: 滚动到指定消息
+
+  // 滚动到指定消息
   const scrollToMessage = (messageId: string) => {
-    // 首先检查精确的消息ID选择器
     const messageElement = document.getElementById(`message-${messageId}`);
-    
     if (messageElement) {
-      // 确保滚动到消息顶部，并添加一些偏移量，避免被界面顶部元素遮挡
-      messageElement.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start'
-      });
-      
-      // 增加调试信息
-      console.log(`Scrolling to message: ${messageId}`);
-      
-      // NOTE: 手动切换打破视口判断 enable active message状态，设置激活消息ID并标记为手动激活
       setActiveMessageId(messageId);
       setIsManuallyActivated(true);
       
-      // 清除之前的超时（如果有的话）
+      // 滚动到消息
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // 如果存在以前的超时，清除它
       if (manualActivationTimeoutRef.current) {
         clearTimeout(manualActivationTimeoutRef.current);
-        manualActivationTimeoutRef.current = null;
       }
       
-      // 不再设置定时器恢复，而是依靠滚动事件来恢复自动激活状态
-      
-      // 添加视觉反馈，短暂高亮消息
-      messageElement.classList.add('scroll-highlight');
-      setTimeout(() => {
-        messageElement.classList.remove('scroll-highlight');
-      }, 1500);
-    } else {
-      console.warn(`Message element with ID message-${messageId} not found`);
+      // 设置新的超时，在一段时间后允许自动激活
+      manualActivationTimeoutRef.current = setTimeout(() => {
+        setIsManuallyActivated(false);
+      }, 2000);
     }
   };
-  
-  // MARK: 判断是否有上一条/下一条消息
-  const activeIndex = activeMessageId ? messages.findIndex(m => m.id === activeMessageId) : -1;
-  const hasPreviousMessage = activeIndex > 0;
-  const hasNextMessage = activeIndex !== -1 && activeIndex < messages.length - 1;
-  
-  // MARK: 获取当前消息的标记状态
-  const isCurrentMessageMarked = () => {
-    if (!activeMessageId) return false;
-    return isMessageMarked(activeMessageId);
-  };
-
-  // 清理超时
-  useEffect(() => {
-    return () => {
-      if (manualActivationTimeoutRef.current) {
-        clearTimeout(manualActivationTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
-    <div className="relative flex flex-col flex-grow overflow-hidden bg-neutral-100">
+    <div className="flex-1 h-full flex flex-col relative">
+      {/* 消息列表 */}
       <div 
         ref={containerRef}
-        className="flex-grow p-4 overflow-y-auto space-y-4 message-list relative scrollbar-hide pb-24"
+        className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
       >
-        {messages.map((msg) => (
-          <ChatMessage 
-            key={msg.id}
-            message={msg} 
-            isActive={msg.id === activeMessageId}
-            onInView={(isInView) => handleMessageInView(isInView, msg)}
-          />
-        ))}
-        
-        {/* 空div用于滚动目标 */}
-        <div ref={messagesEndRef} />
-        
-        {/* 返回底部按钮 */}
-        {showScrollButton && (
-          <button
-            onClick={scrollToBottom}
-            className={cn(
-              "fixed bottom-24 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
-              "bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all z-10",
-            )}
-            title="下一条消息"
-            >
-              <ChevronDown className="w-5 h-5 text-gray-100" />
-          </button>
-        )}
-        
-        {/* 集成了大纲的侧边悬浮栏 */}
-        {messages.length > 0 && (
-          <FloatingSidebar 
-            onMark={handleToggleBookmark}
-            isMarked={isCurrentMessageMarked()}
-            hasPrevious={hasPreviousMessage}
-            hasNext={hasNextMessage}
-            onPrevious={goToPreviousMessage}
-            onNext={goToNextMessage}
-            markedMessages={markedMessages}
-            onJumpToMessage={scrollToMessage}
-            onSaveBookmark={handleSaveBookmark}
-          />
-        )}
+        <div className="w-full pb-4 pt-4">
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              isActive={activeMessageId === message.id}
+              onInView={handleMessageInView}
+            />
+          ))}
+          <div ref={messagesEndRef} className="h-1" />
+        </div>
       </div>
-      
-      {/* 集成聊天输入框 */}
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center px-4 pb-6 pt-2 z-10">
-        <ChatInput 
-          onSendMessage={onSendMessage} 
-          onAbort={onAbort} 
-          isLoading={isLoading}
+
+      {/* 浮动侧边栏 - 用于处理书签/导航 */}
+      {messages.length > 0 && (
+        <FloatingSidebar
+          onPrevious={goToPreviousMessage}
+          onNext={goToNextMessage}
+          onMark={handleToggleBookmark}
+          isMarked={isCurrentMessageMarked()}
+          hasNext={hasNextMessage}
+          hasPrevious={hasPreviousMessage}
+          markedMessages={markedMessages} 
+          onJumpToMessage={scrollToMessage}
+          onSaveBookmark={handleSaveBookmark}
         />
-      </div>
+      )}
+      
+      {/* 滚动到底部按钮 */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-4 right-4 p-2 bg-gray-700 text-white rounded-full shadow-lg hover:bg-gray-600 transition-colors duration-200 z-10"
+        >
+          <ChevronDown className="h-5 w-5" />
+        </button>
+      )}
     </div>
   );
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, ComponentPropsWithoutRef } from 'react';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import { cn } from "@/lib/utils"; 
 import ReactMarkdown from 'react-markdown';
@@ -8,6 +8,8 @@ import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { CopyButton } from '../button/CopyButton';
 import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
 import { StarButton } from '../button/StarButton';
+import { useSelectionStore } from '@/store/useSelectionStore';
+import { CheckCircle2 } from 'lucide-react';
 
 // 扩展消息类型以包含思考过程
 export interface DisplayMessage extends ChatMessageType {
@@ -29,9 +31,19 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
   const [messageStarred, setMessageStarred] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
+  const [hasBeenInView, setHasBeenInView] = useState(false);
   
   // 使用FloatingSidebar状态钩子
   const { isFloatingSidebarVisible } = useFloatingSidebar();
+
+  // 使用Selection Store
+  const { 
+    isSelectionMode, 
+    autoSelectEnabled,
+    isSelected, 
+    addToSelection, 
+    toggleMessageSelection 
+  } = useSelectionStore();
 
   // 初始化收藏状态
   useEffect(() => {
@@ -56,6 +68,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
       ([entry]) => {
         if (entry.isIntersecting) {
           onInView(true, message);
+          
+          // 如果处于选择模式且启用了自动选择，并且消息之前未被视图捕获过
+          if (isSelectionMode && autoSelectEnabled && !hasBeenInView) {
+            setHasBeenInView(true);
+            addToSelection(message);
+          }
         } else {
           onInView(false, message);
         }
@@ -71,7 +89,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
     return () => {
       observer.disconnect();
     };
-  }, [message, onInView]);
+  }, [message, onInView, isSelectionMode, autoSelectEnabled, hasBeenInView, addToSelection]);
 
   // MARK: 高亮动画效果
   useEffect(() => {
@@ -93,6 +111,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
   const isError = message.role === 'error';
+  const messageIsSelected = isSelected(message.id);
+
+  // 处理消息点击
+  const handleMessageClick = () => {
+    if (isSelectionMode) {
+      toggleMessageSelection(message);
+    }
+  };
 
   // MARK: 气泡样式
   const bubbleClasses = cn(
@@ -101,16 +127,20 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
     isUser ? "bg-blue-600 text-white" : "bg-neutral-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100",
     isError ? "bg-red-100 dark:bg-red-900 border border-red-500 text-red-700 dark:text-red-200 prose-red" : "",
     isActive && !isUser ? "ring-2 ring-blue-400 dark:ring-blue-500 bg-gray-200 dark:bg-gray-600" : "",
-    isActive && isUser ? "ring-2 ring-blue-300" : ""
+    isActive && isUser ? "ring-2 ring-blue-300" : "",
+    // 添加选择模式相关样式
+    isSelectionMode && "cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all",
+    isSelectionMode && messageIsSelected && "ring-2 ring-blue-500 dark:ring-blue-400",
   );
 
   // 添加外层容器的类
   const containerClasses = cn(
-    "flex mb-3", 
+    "flex m-3", 
     isUser ? "justify-end" : "justify-start", 
     "transition-all duration-300",
     isActive && "scroll-mt-16", // 当消息激活时添加滚动边距，避免被顶部元素遮挡
-    isFloatingSidebarVisible && "mr-16 transition-all duration-300" // 当侧边栏可见时添加右边距
+    isFloatingSidebarVisible && "mr-16 transition-all duration-300", // 当侧边栏可见时添加右边距
+    isSelectionMode && "relative ml-12 transition-all duration-300" // 选择模式时添加相对定位
   );
 
   // MARK: 最终显示的内容
@@ -119,7 +149,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
 
   // MARK: Markdown配置
   const markdownComponents = {
-    code({ inline, className, children, ...props }: any) {
+    code({ inline, className, children, ...rest }: ComponentPropsWithoutRef<'code'> & { inline?: boolean }) {
       const match = /language-(\w+)/.exec(className || '');
       return !inline && match ? (
         <div className="relative group">
@@ -135,13 +165,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
             style={coldarkDark} // 使用导入的主题
             language={match[1]}
             PreTag="div"
-            {...props}
+            {...rest}
           >
             {String(children).replace(/\n$/, '')}
           </SyntaxHighlighter>
         </div>
       ) : (
-        <code className={className} {...props}>
+        <code className={className} {...rest}>
           {children}
         </code>
       );
@@ -153,7 +183,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
       className={cn(containerClasses)} 
       ref={messageRef}
       id={`message-${message.id}`}
+      onClick={handleMessageClick}
     >
+      {/* 选择状态指示器 */}
+      {isSelectionMode && messageIsSelected && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-8 text-blue-500 dark:text-blue-400">
+          { isSelected(message.id) && <CheckCircle2 className="h-5 w-5" />}
+        </div>
+      )}
       
       <div className="flex flex-col max-w-[75%] group">
         {message.isMarked && message.summary && (
@@ -171,6 +208,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
                 onClick={(e) => {
                   // 阻止默认的 details 切换行为，手动控制状态
                   e.preventDefault();
+                  e.stopPropagation(); // 防止触发消息选择
                   setIsThinkingExpanded(!isThinkingExpanded);
                 }}
               >
@@ -205,7 +243,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
         </div>
         {/* 消息底部的复制按钮 - 常驻显示 */}
         {contentToDisplay && contentToDisplay.trim().length > 0 && (
-            <div className="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-2">
+            <div 
+              className="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-2"
+              onClick={(e) => e.stopPropagation()} // 防止触发消息选择
+            >
               <StarButton 
                 text={contentToDisplay} 
                 size="sm" 

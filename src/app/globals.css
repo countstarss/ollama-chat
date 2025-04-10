@@ -228,3 +228,17 @@
 .sidebar-collapsed main {
   margin-left: 0 !important;
 }
+
+/* 添加自定义样式，隐藏滚动条但保留滚动功能 */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
