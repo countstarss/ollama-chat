@@ -6,6 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import { FloatingSidebar } from '../ui/FloatingSidebar';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { ChatInput } from './ChatInput';
+import { cn } from '@/lib/utils';
 
 interface ChatWindowProps {
   messages: DisplayMessage[];
@@ -281,7 +282,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   }, []);
 
   return (
-    <div className="relative flex flex-col flex-grow overflow-hidden">
+    <div className="relative flex flex-col flex-grow overflow-hidden bg-neutral-100">
       <div 
         ref={containerRef}
         className="flex-grow p-4 overflow-y-auto space-y-4 message-list relative scrollbar-hide pb-24"
@@ -300,13 +301,16 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
         
         {/* 返回底部按钮 */}
         {showScrollButton && (
-          <div 
-            className="fixed bottom-24 right-6 bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all z-10"
+          <button
             onClick={scrollToBottom}
-            aria-label="滚动到最新消息"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </div>
+            className={cn(
+              "fixed bottom-24 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
+              "bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all z-10",
+            )}
+            title="下一条消息"
+            >
+              <ChevronDown className="w-5 h-5 text-gray-100" />
+          </button>
         )}
         
         {/* 集成了大纲的侧边悬浮栏 */}

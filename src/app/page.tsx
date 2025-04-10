@@ -10,12 +10,13 @@ import { ModelSettingsButton } from '@/components/ui/model-setting/ModelSettings
 import { useModelSettings } from '@/hooks/useModelSettings';
 import { useChatActions } from '@/hooks/useChatActions';
 import { useChatSession } from '@/hooks/useChatSession';
-import { Menu, ChevronLeft, Plus } from 'lucide-react';
+import { Menu, ChevronLeft, Plus, PanelRight, PanelRightClose } from 'lucide-react';
 import { useSidebar } from '@/components/context/sidebar-context';
 import { Button } from '@/components/ui/button';
 import { EditableChatTitle } from '@/components/ui/EditableChatTitle';
 import { v4 as uuidv4 } from 'uuid';
 import toastService from '@/services/toastService';
+import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
 
 export default function Home() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -61,6 +62,9 @@ export default function Home() {
     setIsLoading,
     setModelError
   );
+  
+  // 使用FloatingSidebar状态钩子
+  const { isFloatingSidebarVisible, toggleFloatingSidebar } = useFloatingSidebar();
   
   // 初始化时设置当前选中的模型
   useEffect(() => {
@@ -140,12 +144,6 @@ export default function Home() {
       console.warn('[Home] 无法重命名聊天: 当前没有活动的聊天ID');
     }
   }, [currentChatId, renameChat, refreshRecentChats]);
-  
-  // 处理新建聊天按钮点击
-  const handleNewChat = useCallback(() => {
-    createNewChat();
-    setMessages([]);
-  }, [createNewChat]);
   
   // MARK: 处理发送消息
   const handleSendMessage = useCallback(async (userInput: string) => {
@@ -286,7 +284,6 @@ export default function Home() {
     // 模拟等待一段时间后模型就绪
     setTimeout(() => {
       setIsModelReady(true);
-      toastService.success(`已切换至模型: ${modelId}`);
     }, 500);
   }, []);
 
@@ -321,18 +318,24 @@ export default function Home() {
           <ModelSelectorContainer 
             isLoading={isLoading}
             onModelChange={handleModelChange}
+            isModelReady={isModelReady}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={handleNewChat}
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">新建聊天</span>
-          </Button>
-        
+          
           <ModelSettingsButton isLoading={isLoading} />
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleFloatingSidebar}
+            className="h-8 w-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            title={isFloatingSidebarVisible ? "隐藏工具栏" : "显示工具栏"}
+          >
+            {isFloatingSidebarVisible ? (
+              <PanelRightClose className="h-4 w-4" />
+            ) : (
+              <PanelRight className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </header>
 

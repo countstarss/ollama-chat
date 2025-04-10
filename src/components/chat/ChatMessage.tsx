@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'; 
 import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; 
 import { CopyButton } from '../ui/CopyButton';
-import Image from 'next/image';
+import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
 
 // 扩展消息类型以包含思考过程
 export interface DisplayMessage extends ChatMessageType {
@@ -26,6 +26,9 @@ interface ChatMessageProps {
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = false, onInView }) => {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
   const messageRef = useRef<HTMLDivElement>(null);
+  
+  // 使用FloatingSidebar状态钩子
+  const { isFloatingSidebarVisible } = useFloatingSidebar();
 
   // MARK: 自动折叠思考内容
   useEffect(() => {
@@ -81,21 +84,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
   const isAssistant = message.role === 'assistant';
   const isError = message.role === 'error';
 
-  // MARK: 获取头像URL
-  const getAvatarUrl = () => {
-    if (isUser) {
-      return 'https://avatar.vercel.sh/user?size=32';
-    } else if (isAssistant) {
-      return 'https://avatar.vercel.sh/ollama?size=32';
-    } else {
-      return 'https://avatar.vercel.sh/error?size=32';
-    }
-  };
-
+  // MARK: 气泡样式
   const bubbleClasses = cn(
     "p-3 rounded-lg", // 调整宽度
     "prose prose-sm dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-pre:my-2 prose-pre:p-2 prose-pre:bg-gray-800 prose-pre:rounded", // Markdown 基础样式
-    isUser ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100",
+    isUser ? "bg-blue-600 text-white" : "bg-neutral-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100",
     isError ? "bg-red-100 dark:bg-red-900 border border-red-500 text-red-700 dark:text-red-200 prose-red" : "",
     isActive && !isUser ? "ring-2 ring-blue-400 dark:ring-blue-500 bg-gray-200 dark:bg-gray-600" : "",
     isActive && isUser ? "ring-2 ring-blue-300" : ""
@@ -106,7 +99,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
     "flex mb-3", 
     isUser ? "justify-end" : "justify-start", 
     "transition-all duration-300",
-    isActive && "scroll-mt-16" // 当消息激活时添加滚动边距，避免被顶部元素遮挡
+    isActive && "scroll-mt-16", // 当消息激活时添加滚动边距，避免被顶部元素遮挡
+    isFloatingSidebarVisible && "mr-16 transition-all duration-300" // 当侧边栏可见时添加右边距
   );
 
   // MARK: 最终显示的内容
@@ -145,29 +139,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
 
   return (
     <div 
-      className={containerClasses} 
+      className={cn(containerClasses)} 
       ref={messageRef}
       id={`message-${message.id}`}
     >
-      {/* 非用户消息时，左侧显示头像 */}
-      {!isUser && (
-        <div className="flex-shrink-0 mr-2">
-          <div className="w-8 h-8 rounded-full overflow-hidden">
-            <Image 
-              src={getAvatarUrl()} 
-              alt={isAssistant ? "AI" : "Error"} 
-              width={32} 
-              height={32}
-              className={cn(
-                "w-full h-full",
-                isError ? "border border-red-500" : ""
-              )}
-            />
-          </div>
-        </div>
-      )}
       
-      <div className="flex flex-col max-w-[75%]">
+      <div className="flex flex-col max-w-[75%] group">
         {message.isMarked && message.summary && (
           <div className="text-xs text-blue-500 dark:text-blue-400 mb-1 font-medium">
             {message.summary}
@@ -217,7 +194,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
         </div>
         {/* 消息底部的复制按钮 - 常驻显示 */}
         {contentToDisplay && contentToDisplay.trim().length > 0 && (
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <CopyButton 
                 text={contentToDisplay} 
                 size="sm" 
@@ -229,20 +206,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
           )}
       </div>
       
-      {/* 用户消息时，右侧显示头像 */}
-      {isUser && (
-        <div className="flex-shrink-0 ml-2">
-          <div className="w-8 h-8 rounded-full overflow-hidden">
-            <Image 
-              src={getAvatarUrl()} 
-              alt="User" 
-              width={32} 
-              height={32}
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

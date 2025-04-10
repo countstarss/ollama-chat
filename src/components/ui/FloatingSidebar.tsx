@@ -7,6 +7,7 @@ import { DisplayMessage } from '@/components/chat/ChatMessage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookmarkInput } from './BookmarkInput';
 import { BookmarkList } from './BookmarkList';
+import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
 
 interface FloatingSidebarProps {
   onPrevious: () => void;
@@ -34,6 +35,9 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
   const [isOutlineExpanded, setIsOutlineExpanded] = useState(false);
   const [showBookmarkInput, setShowBookmarkInput] = useState(false);
   const outlineRef = useRef<HTMLDivElement>(null);
+  
+  // 使用FloatingSidebar状态钩子
+  const { isFloatingSidebarVisible } = useFloatingSidebar();
 
   const toggleOutline = () => {
     setIsOutlineExpanded(!isOutlineExpanded);
@@ -75,7 +79,17 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
   const outlineRightOffset = "right-14";
 
   return (
-    <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 pointer-events-none h-[60vh] max-h-[600px] select-none">
+    <motion.div 
+      className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-20 pointer-events-none h-[60vh] max-h-[600px] select-none"
+      animate={{
+        translateX: isFloatingSidebarVisible ? 0 : '100%',
+        opacity: isFloatingSidebarVisible ? 1 : 0
+      }}
+      transition={{
+        duration: 0.3,
+        ease: "easeInOut"
+      }}
+    >
       {/* 侧边按钮组 */}
       <div
         className={cn(
@@ -117,7 +131,7 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
           className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md",
             isMarked
-              ? "bg-blue-500/90 hover:bg-blue-600/95 text-white"
+              ? "bg-blue-600 hover:bg-blue-600/95 text-white"
               : "bg-gray-200/85 dark:bg-gray-800/85 hover:bg-gray-300/90 dark:hover:bg-gray-700/90"
           )}
           title={isMarked ? "取消标记" : "标记此消息"}
@@ -190,6 +204,6 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
