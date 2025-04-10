@@ -19,7 +19,7 @@ export const DEFAULT_GENERATION_SETTINGS: ModelGenerationSettings = {
   frequencyPenalty: 0,
 };
 
-// MARK: - 添加模型验证函数
+// MARK: - 模型验证
 async function validateModel(model: string): Promise<boolean> {
   try {
     // 尝试查询Ollama API获取模型列表（如果API支持）
@@ -59,7 +59,7 @@ async function validateModel(model: string): Promise<boolean> {
   }
 }
 
-// MARK: - OllamaStream
+// MARK: Ollama
 export async function OllamaStream(
   payload: ChatMessage[] | JsonAnalysisInput,
   model: string,
@@ -88,7 +88,7 @@ export async function OllamaStream(
     ? { ...DEFAULT_GENERATION_SETTINGS, ...settings }
     : DEFAULT_GENERATION_SETTINGS;
 
-  let messages: { role: string; content: string }[];
+  // const messages: { role: string; content: string }[] = [];
 
   // --- 根据任务类型构建不同的消息列表 ---
   if (!Array.isArray(payload)) {
@@ -98,7 +98,9 @@ export async function OllamaStream(
   }
 
   // 转换消息格式
-  messages = (payload as ChatMessage[]).map(({ role, content }) => ({
+  const messages: { role: string; content: string }[] = (
+    payload as ChatMessage[]
+  ).map(({ role, content }) => ({
     role,
     content,
   }));

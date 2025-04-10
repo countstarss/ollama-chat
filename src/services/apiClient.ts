@@ -48,6 +48,7 @@ export class ApiClient {
   }
 
   /**
+   * MARK: 发送请求
    * 发送请求到API服务
    */
   async sendRequest(
@@ -153,6 +154,7 @@ export class ApiClient {
   }
 
   /**
+   * MARK: 处理OpenAI
    * 处理OpenAI的流式响应
    */
   private async handleOpenAIStream(
@@ -225,6 +227,7 @@ export class ApiClient {
   }
 
   /**
+   * MARK: Anthropic
    * 发送请求到Anthropic API
    */
   private async sendAnthropicRequest(
@@ -289,6 +292,7 @@ export class ApiClient {
   }
 
   /**
+   * MARK: 自定义API
    * 发送请求到自定义API端点
    */
   private async sendCustomRequest(
