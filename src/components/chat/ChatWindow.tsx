@@ -86,11 +86,16 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       if (!isNearBottom && isAutoScrollEnabled) {
         setIsAutoScrollEnabled(false);
       }
+      
+      // 如果是手动激活状态，检测到滚动后恢复自动激活状态
+      if (isManuallyActivated) {
+        setIsManuallyActivated(false);
+      }
     };
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [isAutoScrollEnabled]);
+  }, [isAutoScrollEnabled, isManuallyActivated]);
 
   // MARK: 监听消息可见性变化
   const handleMessageInView = (isInView: boolean, message: DisplayMessage) => {
@@ -240,13 +245,10 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       // 清除之前的超时（如果有的话）
       if (manualActivationTimeoutRef.current) {
         clearTimeout(manualActivationTimeoutRef.current);
+        manualActivationTimeoutRef.current = null;
       }
       
-      // 设置新的超时，在3秒后恢复自动激活
-      manualActivationTimeoutRef.current = setTimeout(() => {
-        setIsManuallyActivated(false);
-        manualActivationTimeoutRef.current = null;
-      }, 3000);
+      // 不再设置定时器恢复，而是依靠滚动事件来恢复自动激活状态
       
       // 添加视觉反馈，短暂高亮消息
       messageElement.classList.add('scroll-highlight');
