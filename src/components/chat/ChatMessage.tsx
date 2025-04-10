@@ -60,6 +60,23 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
     };
   }, [message, onInView]);
 
+  // MARK: 当 isActive 变化时添加高亮动画效果
+  useEffect(() => {
+    if (isActive && messageRef.current) {
+      // 添加高亮效果
+      messageRef.current.classList.add('message-highlight');
+      
+      // 1.5秒后移除动画效果
+      const timer = setTimeout(() => {
+        if (messageRef.current) {
+          messageRef.current.classList.remove('message-highlight');
+        }
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
+
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
   const isError = message.role === 'error';
@@ -82,6 +99,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
     isError ? "bg-red-100 dark:bg-red-900 border border-red-500 text-red-700 dark:text-red-200 prose-red" : "",
     isActive && !isUser ? "ring-2 ring-blue-400 dark:ring-blue-500 bg-gray-200 dark:bg-gray-600" : "",
     isActive && isUser ? "ring-2 ring-blue-300" : ""
+  );
+
+  // 添加外层容器的类
+  const containerClasses = cn(
+    "flex mb-3", 
+    isUser ? "justify-end" : "justify-start", 
+    "transition-all duration-300",
+    isActive && "scroll-mt-16" // 当消息激活时添加滚动边距，避免被顶部元素遮挡
   );
 
   // MARK: 最终显示的内容
@@ -120,7 +145,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
 
   return (
     <div 
-      className={`flex mb-3 ${isUser ? 'justify-end' : 'justify-start'} transition-all duration-300`} 
+      className={containerClasses} 
       ref={messageRef}
       id={`message-${message.id}`}
     >

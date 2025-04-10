@@ -30,6 +30,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(new Set());
+  const [isManuallyActivated, setIsManuallyActivated] = useState<boolean>(false);
+  const manualActivationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 从消息列表中获取已标记的消息
   const initialMarkedMessages = useMemo(() => 
@@ -105,6 +107,9 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   
   // MARK: 更新活动消息ID（当多个消息可见时，选择第一个可见的）
   useEffect(() => {
+    // 如果是手动激活状态，则跳过视口检测的自动激活
+    if (isManuallyActivated) return;
+
     if (visibleMessages.size > 0) {
       // 找出所有可见消息中在messages数组中索引最小的
       const visibleMessagesArray = Array.from(visibleMessages);
@@ -128,7 +133,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       // 如果没有可见消息，默认设置最后一条消息为活动
       setActiveMessageId(messages[messages.length - 1].id);
     }
-  }, [visibleMessages, messages]);
+  }, [visibleMessages, messages, isManuallyActivated]);
 
   // MARK: 智能滚动控制
   useEffect(() => {
@@ -228,8 +233,20 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       // 增加调试信息
       console.log(`Scrolling to message: ${messageId}`);
       
-      // 设置激活消息ID
+      // NOTE: 手动切换打破视口判断 enable active message状态，设置激活消息ID并标记为手动激活
       setActiveMessageId(messageId);
+      setIsManuallyActivated(true);
+      
+      // 清除之前的超时（如果有的话）
+      if (manualActivationTimeoutRef.current) {
+        clearTimeout(manualActivationTimeoutRef.current);
+      }
+      
+      // 设置新的超时，在3秒后恢复自动激活
+      manualActivationTimeoutRef.current = setTimeout(() => {
+        setIsManuallyActivated(false);
+        manualActivationTimeoutRef.current = null;
+      }, 3000);
       
       // 添加视觉反馈，短暂高亮消息
       messageElement.classList.add('scroll-highlight');
@@ -251,6 +268,15 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     if (!activeMessageId) return false;
     return isMessageMarked(activeMessageId);
   };
+
+  // 清理超时
+  useEffect(() => {
+    return () => {
+      if (manualActivationTimeoutRef.current) {
+        clearTimeout(manualActivationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="relative flex flex-col flex-grow overflow-hidden">
