@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { ApiRequestBody, ApiTaskType } from "@/lib/types";
 import { DisplayMessage } from "@/components/chat/ChatMessage";
+import toastService from "@/services/toastService";
 
 type StreamResponseCallback = (updates: Partial<DisplayMessage>) => void;
 
@@ -184,7 +185,7 @@ export function useStreamResponse() {
                       }
                     }
                   }
-                  // MARK: 结束think标签处理
+                  // MARK: 结束think标签
                 }
 
                 // MARK: 处理流结束标志
@@ -195,8 +196,7 @@ export function useStreamResponse() {
                   break; // 跳出内层 for 循环
                 }
               } catch (e) {
-                console.error("解析SSE数据块失败:", dataContent, e);
-                // 如果持续解析失败，可以考虑抛出错误终止流
+                toastService.error("解析SSE数据块失败");
                 if (
                   dataContent.includes("error") ||
                   dataContent.includes("Error")
@@ -272,14 +272,13 @@ export function useStreamResponse() {
         );
         return true;
       } catch (error) {
-        console.error("流式API调用失败:", error);
+        toastService.error("流式API调用失败");
 
         // 检查是否是中断错误
         if (
           error instanceof Error &&
           (error.name === "AbortError" || error.message.includes("中断"))
         ) {
-          console.log("请求已中断");
           updateCallback({
             mainContent: "[请求已中断]",
             isThinkingComplete: true,
@@ -300,6 +299,7 @@ export function useStreamResponse() {
             isThinkingComplete: true,
           });
           // 重新抛出错误，让上层组件处理特定的模型错误
+          toastService.error(`模型错误: ${error.message}`);
           throw new Error(`模型错误: ${error.message}`);
         }
         // 其他一般错误

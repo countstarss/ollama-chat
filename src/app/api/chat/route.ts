@@ -10,13 +10,6 @@ export async function POST(request: NextRequest) {
     const body: ApiRequestBody = await request.json();
     const { task, payload, model, settings } = body;
 
-    console.log(
-      `body: ${JSON.stringify(body)}`,
-      `API收到任务: ${task}${model ? `, 模型: ${model}` : ""}${
-        settings ? ", 带自定义设置" : ""
-      }`
-    );
-
     // MARK: - 验证请求
     if (!task) {
       return new Response(JSON.stringify({ error: "缺少任务类型" }), {

@@ -3,8 +3,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   History,
-  Settings,
-  BookOpen,
   Database,
   ChevronRight,
   NotebookTabs,
@@ -54,10 +52,10 @@ export function SidebarNav() {
   }
 
   return (
-    <div className="flex-1 px-3 py-4">
+    <div className="flex-1 px-3 py-4 h-[50vh] overflow-y-auto scrollbar-hide">
       <Button 
         variant="default" 
-        className="w-full mb-4 flex items-center gap-2"
+        className="w-full flex items-center gap-2 sticky top-0 mb-4"
         onClick={handleNewChat}
       >
         <Plus className="h-4 w-4" />
@@ -95,7 +93,7 @@ export function SidebarNav() {
             />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="pl-2 space-y-1">
+        <CollapsibleContent className="pl-2 space-y-1 h-[30vh] overflow-y-auto scrollbar-hide">
           {recentChats.length === 0 ? (
             <div className="text-sm text-muted-foreground px-2 py-1">
               没有最近的对话

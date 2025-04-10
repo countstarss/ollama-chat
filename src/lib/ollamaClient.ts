@@ -94,10 +94,6 @@ export async function OllamaStream(
       "You are a helpful AI assistant. If you need to think step-by-step, use <think>...</think> tags for your reasoning before providing the final answer.",
   });
 
-  console.log(
-    `Requesting stream from Ollama (${selectedModel}) for task: ${task}, temperature: ${temperature}`
-  );
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {

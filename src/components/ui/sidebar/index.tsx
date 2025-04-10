@@ -13,7 +13,7 @@ export function Sidebar() {
     <ContextMenuWrapper>
       <div 
         className={cn(
-          "group fixed top-0 left-0 h-full w-[180px] md:w-[260px] overflow-auto flex flex-col bg-background border-r transition-all duration-300",
+          "group fixed top-0 left-0 h-full w-[180px] md:w-[260px] overflow-hidden flex flex-col bg-background border-r transition-all duration-300",
           isCollapsed ? "-translate-x-full" : "translate-x-0"
         )}
         style={{

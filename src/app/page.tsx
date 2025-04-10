@@ -24,7 +24,7 @@ export default function Home() {
   
   // 使用hooks
   const { modelSettings } = useModelSettings();
-  const { getSelectedModel, selectModel, models } = useModelConfig();
+  const { getSelectedModel } = useModelConfig();
   const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null);
   const chatWindowRef = useRef<ChatWindowHandle>(null);
   const { sendStreamRequest } = useStreamResponse();
@@ -245,8 +245,6 @@ export default function Home() {
 
   // 处理模型选择变更
   const handleModelChange = useCallback((modelId: string) => {
-    console.log(`[切换模型] 收到用户输入的模型名称: ${modelId}`);
-    
     // 创建一个临时的模型配置对象
     const tempModel: ModelConfig = {
       id: `temp-${Date.now()}`,
@@ -255,7 +253,6 @@ export default function Home() {
       description: `直接指定的模型 ${modelId}`
     };
     
-    console.log(`[切换模型] 直接使用模型名称: ${tempModel.modelId}`);
     setSelectedModel(tempModel);
     setModelError(null);
     

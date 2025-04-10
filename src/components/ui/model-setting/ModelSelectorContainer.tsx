@@ -35,8 +35,7 @@ export function ModelSelectorContainer({ isLoading, onModelChange }: ModelSelect
       setModelError("请输入有效的模型名称");
       return;
     }
-    
-    console.log(`[切换模型] 直接使用用户输入的模型名称: ${modelInput}`);
+  
     setCurrentModel(modelInput);
     setModelError(null);
     

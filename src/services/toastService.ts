@@ -29,11 +29,6 @@ interface ToastOptions {
   important?: boolean;
 }
 
-// 默认配置
-const defaultOptions: ToastOptions = {
-  duration: 4000,
-};
-
 // 成功通知
 export const showSuccess = (message: string, options?: any) => {
   return toast.success(message, options);

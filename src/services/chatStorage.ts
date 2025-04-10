@@ -1,5 +1,6 @@
 import { DisplayMessage } from "@/components/chat/ChatMessage";
 import { openDB, IDBPDatabase } from "idb";
+import toastService from "./toastService";
 
 interface ChatSession {
   id: string;
@@ -111,14 +112,14 @@ export const deleteChat = async (chatId: string): Promise<void> => {
   try {
     const db = await openDatabase();
     await db.delete(STORE_NAME, chatId);
-    console.log(`聊天会话已删除: ${chatId}`);
+    toastService.success(`聊天会话已删除: ${chatId}`);
   } catch (error) {
-    console.error(`删除聊天会话失败 ${chatId}:`, error);
+    toastService.error(`删除聊天会话失败 ${chatId}`);
     // 尝试从localStorage删除
     try {
       localStorage.removeItem(`chat_${chatId}`);
     } catch (e) {
-      console.error("从localStorage删除也失败:", e);
+      toastService.error(`从localStorage删除也失败: ${e}`);
     }
   }
 };
@@ -136,10 +137,10 @@ export const updateChatName = async (
       chat.name = newName;
       chat.lastUpdated = Date.now();
       await db.put(STORE_NAME, chat);
-      console.log(`聊天会话名称已更新: ${chatId}`);
+      toastService.success(`聊天会话名称已更新: ${chatId}`);
     }
   } catch (error) {
-    console.error(`更新聊天会话名称失败 ${chatId}:`, error);
+    toastService.error(`更新聊天会话名称失败 ${chatId}:`, error);
     // 尝试从localStorage更新
     try {
       const chatJson = localStorage.getItem(`chat_${chatId}`);
@@ -161,9 +162,9 @@ export const clearAllChats = async (): Promise<void> => {
   try {
     const db = await openDatabase();
     await db.clear(STORE_NAME);
-    console.log("所有聊天会话已清除");
+    toastService.success("所有聊天会话已清除");
   } catch (error) {
-    console.error("清除所有聊天会话失败:", error);
+    toastService.error("清除所有聊天会话失败");
   }
 };
 

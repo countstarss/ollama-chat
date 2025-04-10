@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     ],
   },
   eslint: {},
+  devIndicators: false,
 };
 
 export default nextConfig;
