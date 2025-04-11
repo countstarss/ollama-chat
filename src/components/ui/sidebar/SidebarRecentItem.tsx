@@ -36,7 +36,6 @@ export function SidebarRecentItem({
   
   // 当外部 label 变化时更新内部状态
   useEffect(() => {
-    console.log(`[SidebarRecentItem] 标题已更新: ${id}, 新标题: ${label}`);
     setDisplayLabel(label);
     setNewName(label);
   }, [id, label]);

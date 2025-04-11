@@ -130,7 +130,6 @@ export function SidebarNav() {
     
     // 设置定时器，每30秒刷新一次
     const intervalId = setInterval(() => {
-      console.log('[SidebarNav] 自动刷新最近聊天列表');
       refreshRecentChats().catch(err => {
         console.error('[SidebarNav] 自动刷新出错:', err);
       });
@@ -175,7 +174,7 @@ export function SidebarNav() {
   }
 
   return (
-    <div className="flex-1 px-3 py-4 h-[50vh] overflow-y-auto scrollbar-hide">
+    <div className="flex-1 px-3 py-4  scrollbar-hide">
       <Button 
         variant="default" 
         className="w-full flex items-center gap-2 sticky top-0 mb-4"
@@ -192,19 +191,49 @@ export function SidebarNav() {
         href="/models"
       />
       <SidebarNavItem
-          icon={<Star className="h-4 w-4" />}
-          label="收藏"
-          href="/star"
-        />
+        icon={<Star className="h-4 w-4" />}
+        label="收藏"
+        href="/star"
+      />
+
+      <Collapsible
+        // MARK: Notes
+        open={openNotes}
+        onOpenChange={setOpenNotes}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            className="w-full justify-between pl-2 mb-1 font-normal"
+          >
+            <div className="flex items-center gap-2">
+              <NotebookTabs className="h-4 w-4" />
+              <span>笔记</span>
+            </div>
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 shrink-0 transition-transform duration-200",
+                openNotes ? "rotate-90" : ""
+              )}
+            />
+          </Button>
+          
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pl-2 space-y-1">
+          <div className="text-sm text-muted-foreground px-2 py-1">
+            暂无笔记
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* 最近聊天 */}
       <Collapsible
         // MARK: RecentChats
         open={openRecently}
         onOpenChange={handleRecentlyOpenChange}
-        className="mt-3"
+        className="mt-3 h-[50vh] overflow-y-auto scrollbar-hide"
       >
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center rounded-md bg-neutral-100 dark:bg-neutral-900 justify-between mb-1 sticky top-0">
           <CollapsibleTrigger asChild>
             <Button
               variant="ghost"
@@ -239,7 +268,7 @@ export function SidebarNav() {
           </Button>
         </div>
         
-        <CollapsibleContent className="pl-2 space-y-1 max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pr-1">
+        <CollapsibleContent className="pl-2 space-y-1 max-h-[40vh] overflow-y-auto">
           {recentChats.length === 0 ? (
             <div className="text-sm text-muted-foreground px-2 py-1">
               没有最近的对话
@@ -260,36 +289,7 @@ export function SidebarNav() {
         </CollapsibleContent>
       </Collapsible>
 
-      <Collapsible
-        // MARK: Notes
-        open={openNotes}
-        onOpenChange={setOpenNotes}
-        className="mt-3"
-      >
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            className="w-full justify-between pl-2 mb-1 font-normal"
-          >
-            <div className="flex items-center gap-2">
-              <NotebookTabs className="h-4 w-4" />
-              <span>笔记</span>
-            </div>
-            <ChevronRight
-              className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-200",
-                openNotes ? "rotate-90" : ""
-              )}
-            />
-          </Button>
-          
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pl-2 space-y-1">
-          <div className="text-sm text-muted-foreground px-2 py-1">
-            暂无笔记
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      
       
       {/* 其他导航项 */}
       <div className="mt-4">

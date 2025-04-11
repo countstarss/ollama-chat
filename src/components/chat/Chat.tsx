@@ -10,7 +10,7 @@ import { ModelSettingsButton } from '@/components/ui/model-setting/ModelSettings
 import { useModelSettings } from '@/hooks/useModelSettings';
 import { useChatActions } from '@/hooks/useChatActions';
 import { useChatSession } from '@/hooks/useChatSession';
-import { Menu, ChevronLeft, PanelRight, PanelRightClose } from 'lucide-react';
+import { PanelRight, PanelRightClose, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useSidebar } from '@/components/context/sidebar-context';
 import { Button } from '@/components/ui/button';
 import { EditableChatTitle } from '@/components/ui/EditableChatTitle';
@@ -383,10 +383,10 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 scrollbar-hide">
-      <header className="p-2 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
+      <header className="h-13 p-2 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-8 w-8">
-            {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {isCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </Button>
           {modelError && <div className="hidden" />}
           
