@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo, useCallback } from 'react';
 import { ChatMessage, DisplayMessage } from './ChatMessage';
 import { ChevronDown } from 'lucide-react';
 import { FloatingSidebar } from '../ui/FloatingSidebar';
@@ -33,6 +33,16 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(new Set());
   const [isManuallyActivated, setIsManuallyActivated] = useState<boolean>(false);
   const manualActivationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // MARK: 自动高亮状态
+  // NOTE: 自动高亮状态，默认开启
+  const [autoHighlightEnabled, setAutoHighlightEnabled] = useState<boolean>(() => {
+    // 从localStorage读取设置，如果不存在则默认为true
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chat-auto-highlight');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
 
   // 从消息列表中获取已标记的消息
   const initialMarkedMessages = useMemo(() => 
@@ -88,15 +98,36 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
         setIsAutoScrollEnabled(false);
       }
       
-      // 如果是手动激活状态，检测到滚动后恢复自动激活状态
+      // 检测到用户主动滚动，判断是否需要恢复自动激活
       if (isManuallyActivated) {
-        setIsManuallyActivated(false);
+        // 获取当前手动激活的消息元素
+        const activeElement = activeMessageId 
+          ? document.getElementById(`message-${activeMessageId}`)
+          : null;
+        
+        if (activeElement) {
+          // 计算消息元素是否在视口中央
+          const rect = activeElement.getBoundingClientRect();
+          const elementCenter = rect.top + rect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
+          const distanceFromCenter = Math.abs(elementCenter - viewportCenter);
+          
+          // 如果消息元素离开了视口中央区域（用户滚动位置明显变化），才恢复自动激活
+          // 这样可以避免轻微滚动就取消手动激活状态
+          if (distanceFromCenter > 150) {
+            setIsManuallyActivated(false);
+            console.log("用户滚动位置明显变化，恢复自动激活");
+          }
+        } else {
+          // 找不到元素，恢复自动激活
+          setIsManuallyActivated(false);
+        }
       }
     };
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [isAutoScrollEnabled, isManuallyActivated]);
+  }, [isAutoScrollEnabled, isManuallyActivated, activeMessageId]);
 
   // MARK: 监听消息可见性变化
   const handleMessageInView = (isInView: boolean, message: DisplayMessage) => {
@@ -111,10 +142,11 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     });
   };
   
-  // MARK: 更新活动消息ID（当多个消息可见时，选择第一个可见的）
+  // MARK: 更新活动消息ID
+  // NOTE: 当多个消息可见时，选择第一个可见的
   useEffect(() => {
-    // 如果是手动激活状态，则跳过视口检测的自动激活
-    if (isManuallyActivated) return;
+    // 如果是手动激活状态或自动高亮功能被禁用，则跳过视口检测的自动激活
+    if (isManuallyActivated || !autoHighlightEnabled) return;
 
     if (visibleMessages.size > 0) {
       // 找出所有可见消息中在messages数组中索引最小的
@@ -139,7 +171,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       // 如果没有可见消息，默认设置最后一条消息为活动
       setActiveMessageId(messages[messages.length - 1].id);
     }
-  }, [visibleMessages, messages, isManuallyActivated]);
+  }, [visibleMessages, messages, isManuallyActivated, autoHighlightEnabled]);
 
   // MARK: 智能滚动控制
   useEffect(() => {
@@ -241,14 +273,27 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
       // 如果存在以前的超时，清除它
       if (manualActivationTimeoutRef.current) {
         clearTimeout(manualActivationTimeoutRef.current);
+        manualActivationTimeoutRef.current = null;
       }
       
-      // 设置新的超时，在一段时间后允许自动激活
-      manualActivationTimeoutRef.current = setTimeout(() => {
-        setIsManuallyActivated(false);
-      }, 2000);
+      // 不再自动恢复视口检测，只有当用户滚动时才恢复
+      // 用户滚动会触发监听滚动事件中的处理函数，将isManuallyActivated设为false
+      // 这样手动激活状态会一直保持，直到用户主动滚动
     }
   };
+
+  // MARK: toggleAuto
+  // NOTE: 切换自动高亮状态
+  const toggleAutoHighlight = useCallback(() => {
+    setAutoHighlightEnabled(prev => {
+      const newValue = !prev;
+      // 保存到localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('chat-auto-highlight', String(newValue));
+      }
+      return newValue;
+    });
+  }, []);
 
   return (
     <div className="flex-1 h-full flex flex-col relative">
@@ -282,6 +327,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
           markedMessages={markedMessages} 
           onJumpToMessage={scrollToMessage}
           onSaveBookmark={handleSaveBookmark}
+          autoHighlight={autoHighlightEnabled}
+          onToggleAutoHighlight={toggleAutoHighlight}
         />
       )}
 

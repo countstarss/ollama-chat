@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { ChevronUp, ChevronDown, Bookmark, BookmarkCheck, Menu, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Bookmark, BookmarkCheck, Menu, X, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DisplayMessage } from '@/components/chat/ChatMessage';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,8 @@ interface FloatingSidebarProps {
   markedMessages: DisplayMessage[];
   onJumpToMessage: (messageId: string) => void;
   onSaveBookmark?: (bookmarkName: string) => void;
+  autoHighlight: boolean;
+  onToggleAutoHighlight: () => void;
 }
 
 export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
@@ -30,7 +32,9 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
   hasPrevious,
   markedMessages,
   onJumpToMessage,
-  onSaveBookmark
+  onSaveBookmark,
+  autoHighlight,
+  onToggleAutoHighlight
 }) => {
   const [isOutlineExpanded, setIsOutlineExpanded] = useState(false);
   const [showBookmarkInput, setShowBookmarkInput] = useState(false);
@@ -123,6 +127,24 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
           title="下一条消息"
         >
           <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+        </button>
+
+        {/* 自动高亮切换按钮 */}
+        <button
+          onClick={onToggleAutoHighlight}
+          className={cn(
+            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md",
+            autoHighlight
+              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+              : "bg-gray-200/85 dark:bg-gray-800/85 hover:bg-gray-300/90 dark:hover:bg-gray-700/90"
+          )}
+          title={autoHighlight ? "关闭自动高亮" : "开启自动高亮"}
+        >
+          {autoHighlight ? (
+            <Eye className="w-5 h-5" />
+          ) : (
+            <EyeOff className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          )}
         </button>
 
         {/* 书签按钮 */}
