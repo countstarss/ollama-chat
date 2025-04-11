@@ -191,6 +191,11 @@ export function SidebarNav() {
         label="模型"
         href="/models"
       />
+      <SidebarNavItem
+          icon={<Star className="h-4 w-4" />}
+          label="收藏"
+          href="/star"
+        />
 
       {/* 最近聊天 */}
       <Collapsible
@@ -288,11 +293,6 @@ export function SidebarNav() {
       
       {/* 其他导航项 */}
       <div className="mt-4">
-        <SidebarNavItem
-          icon={<Star className="h-4 w-4" />}
-          label="收藏"
-          href="/star"
-        />
         {/* <SidebarNavItem
           icon={<BookOpen className="h-4 w-4" />}
           label="文档"

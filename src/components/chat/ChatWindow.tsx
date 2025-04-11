@@ -13,6 +13,7 @@ interface ChatWindowProps {
   onAbort?: () => void;
   isLoading: boolean;
   onBookmarkChange?: (updatedMessages: DisplayMessage[]) => void;
+  currentChatId?: string | null; // 当前聊天ID
 }
 
 // 定义暴露给父组件的方法接口
@@ -22,7 +23,7 @@ export interface ChatWindowHandle {
 
 // 使用forwardRef包装组件
 export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, ref) => {
-  const { messages, onBookmarkChange, isLoading, onSendMessage, onAbort } = props;
+  const { messages, onBookmarkChange, isLoading, onSendMessage, onAbort, currentChatId } = props;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previousMessagesLengthRef = useRef(0);
@@ -260,7 +261,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
-              message={message}
+              message={{...message, chatId: message.chatId || (currentChatId || undefined)}}
               isActive={activeMessageId === message.id}
               onInView={handleMessageInView}
             />

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStarStore } from '@/store/useStarStore';
+import { DisplayMessage } from '@/components/chat/ChatMessage';
 
 interface StarButtonProps {
   text: string;
@@ -12,35 +13,36 @@ interface StarButtonProps {
   errorText?: string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'subtle' | 'outline';
-  tags?: string[];
   isStarred?: boolean;
   setIsStarred?: (isStarred: boolean) => void;
+  message?: DisplayMessage; // 可选的消息对象，用于保存完整消息
+  currentChatId?: string; // 当前聊天ID，用于设置收藏消息的chatId
 }
 
 export function StarButton({
   text,
   className,
-  // successText = '已收藏',
-  // errorText = '收藏失败',
   size = 'md',
   variant = 'default',
-  tags = [],
   isStarred = false,
   setIsStarred = () => {},
+  message,
+  currentChatId,
 }: StarButtonProps) {
   // 使用Zustand store
-  const { addStar, checkIfStarred } = useStarStore();
+  const { addStar, isStarred: checkIsStarred, refreshStarredMessages } = useStarStore();
   const [isStarring, setIsStarring] = useState(false);
+  const [localIsStarred, setLocalIsStarred] = useState(isStarred);
 
   // 组件加载时检查是否已收藏
   useEffect(() => {
-    const checkStarStatus = async () => {
-      const starred = await checkIfStarred(text);
+    // 如果提供了消息对象，使用其ID检查状态
+    if (message && message.id) {
+      const starred = checkIsStarred(message.id);
+      setLocalIsStarred(starred);
       setIsStarred(starred);
-    };
-    
-    checkStarStatus();
-  }, [checkIfStarred, text, setIsStarred]);
+    }
+  }, [message, checkIsStarred, setIsStarred]);
 
   // 点击处理
   const handleClick = async (e: React.MouseEvent) => {
@@ -49,9 +51,24 @@ export function StarButton({
     
     setIsStarring(true);
     try {
-      const result = await addStar(text, tags);
+      // 使用消息对象或创建一个简单的消息对象
+      const messageToStar = message || {
+        id: `star-${Date.now()}`, // 生成一个唯一ID
+        role: 'assistant',
+        content: text,
+      };
+      
+      // 添加chatId字段
+      if (currentChatId && !messageToStar.chatId) {
+        messageToStar.chatId = currentChatId;
+      }
+      
+      const result = await addStar(messageToStar);
       if (result) {
+        setLocalIsStarred(true);
         setIsStarred(true);
+        // 刷新收藏列表
+        refreshStarredMessages();
       }
     } finally {
       setIsStarring(false);
@@ -73,7 +90,7 @@ export function StarButton({
   };
   
   // 星标状态的独特样式
-  const starredStyles = isStarred ? 
+  const starredStyles = localIsStarred ? 
     'text-yellow-500 fill-yellow-500' : 
     '';
 
@@ -81,7 +98,7 @@ export function StarButton({
     <button
       onClick={handleClick}
       className={cn(
-        isStarred ? 'fill-yellow-500' : '',
+        localIsStarred ? 'fill-yellow-500' : '',
         'rounded-md flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30',
         sizeClasses[size],
         variantClasses[variant],
@@ -89,14 +106,14 @@ export function StarButton({
         starredStyles,
         className
       )}
-      title={isStarred ? "已收藏" : "收藏内容"}
+      title={localIsStarred ? "已收藏" : "收藏内容"}
       type="button"
       disabled={isStarring}
     >
       {isStarring ? (
         <Loader2 className="h-full w-full animate-spin" />
       ) : (
-        isStarred ? <Star className="h-full w-full fill-yellow-500" /> : <Star className="h-full w-full" />
+        localIsStarred ? <Star className="h-full w-full fill-yellow-500" /> : <Star className="h-full w-full" />
       )}
     </button>
   );

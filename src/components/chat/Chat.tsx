@@ -18,12 +18,14 @@ import { v4 as uuidv4 } from 'uuid';
 import toastService from '@/services/toastService';
 import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
 import { SelectionModeToggle } from './SelectionModeToggle';
+import { useSearchParams } from 'next/navigation';
 
 export default function Chat() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [modelError, setModelError] = useState<string | null>(null);
   const [isModelReady, setIsModelReady] = useState(false);
+  const [messageToScrollTo, setMessageToScrollTo] = useState<string | null>(null);
   
   // 使用hooks
   const { modelSettings } = useModelSettings();
@@ -32,6 +34,7 @@ export default function Chat() {
   const chatWindowRef = useRef<ChatWindowHandle>(null);
   const { sendStreamRequest } = useStreamResponse();
   const { toggleSidebar, isCollapsed } = useSidebar();
+  const searchParams = useSearchParams();
   
   // 使用聊天会话hook
   const {
@@ -76,13 +79,45 @@ export default function Chat() {
     }
   }, [getSelectedModel]);
   
-  // MARK: 加载聊天记录
+  // ========== 滚动控制逻辑 ==========
+  /**
+   * 聊天滚动控制机制
+   * 
+   * 滚动优先级:
+   * 1. URL参数中的messageId (最高优先级) - 滚动到指定消息并高亮
+   * 2. 默认滚动行为 - 滚动到最新消息
+   * 
+   * 滚动触发点:
+   * - 聊天记录加载完成后
+   * - messageToScrollTo状态变化时
+   * - 消息响应完成后
+   * 
+   * 特殊处理:
+   * - 当URL中包含messageId时，消息响应完成后不会自动滚动到底部
+   * - 用户可以通过界面右下角的滚动按钮手动滚动到最新消息
+   */
+  
+  // MARK: 1. 加载聊天记录后的滚动处理
   useEffect(() => {
     const loadMessages = async () => {
       if (currentChatId) {
         const loadedMessages = await loadChat(currentChatId);
         if (loadedMessages && loadedMessages.length > 0) {
           setMessages(loadedMessages);
+          
+          // 检查URL中是否有messageId参数
+          const messageId = searchParams.get('messageId');
+          if (messageId) {
+            console.log(`[滚动控制] URL参数中包含messageId: ${messageId}`);
+            // 优先级1: 如果URL指定了messageId，设置为需要滚动到的消息ID
+            setMessageToScrollTo(messageId);
+          } else {
+            // 优先级2: 如果没有特定的messageId，则滚动到最新消息
+            setTimeout(() => {
+              scrollToBottom();
+              console.log('[滚动控制] 聊天加载完成，滚动到最新消息');
+            }, 300);
+          }
         } else {
           // 如果没有加载到消息，清空当前消息列表
           setMessages([]);
@@ -91,8 +126,49 @@ export default function Chat() {
     };
     
     loadMessages();
-  }, [currentChatId, loadChat]);
+  }, [currentChatId, loadChat, searchParams, scrollToBottom]);
   
+  // MARK: 滚动到指定-最高优
+  useEffect(() => {
+    // 如果有需要滚动到的消息ID且消息已加载
+    if (messageToScrollTo && messages.length > 0 && chatWindowRef.current) {
+      // 检查消息是否存在
+      const messageExists = messages.some(msg => msg.id === messageToScrollTo);
+      
+      if (messageExists) {
+        console.log(`[滚动控制] 准备滚动到指定消息: ${messageToScrollTo}`);
+        
+        // 等待DOM更新后执行滚动
+        setTimeout(() => {
+          // 尝试获取消息元素并滚动到该位置
+          const messageElement = document.getElementById(`message-${messageToScrollTo}`);
+          if (messageElement) {
+            // 执行滚动并添加视觉反馈
+            messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            messageElement.classList.add('message-highlight');
+            
+            // 短暂高亮后移除效果
+            setTimeout(() => {
+              messageElement.classList.remove('message-highlight');
+            }, 1500);
+            
+            console.log(`[滚动控制] 已滚动到消息: ${messageToScrollTo}`);
+          } else {
+            console.warn(`[滚动控制] 未找到消息元素: message-${messageToScrollTo}`);
+          }
+          
+          // 完成滚动后清除ID，避免重复滚动
+          setMessageToScrollTo(null);
+        }, 500);
+      } else {
+        console.warn(`[滚动控制] 消息不存在: ${messageToScrollTo}`);
+        setMessageToScrollTo(null);
+      }
+    }
+  }, [messageToScrollTo, messages]);
+
+  // ========== 其他状态逻辑 ==========
+
   // 在消息变化时保存聊天，但仅在消息数量变化或消息生成完成时
   useEffect(() => {
     // 只有当currentChatId存在且有消息时才继续
@@ -198,8 +274,12 @@ export default function Chat() {
         toastService.error("响应生成失败，请重试");
       }
       
-      // MARK: 响应完成后滚到底部
-      scrollToBottom();
+      // MARK: 滚动处理
+      // 滚动优先级：特定消息ID > 默认滚动到底部
+      const messageId = searchParams.get('messageId');
+      if (!messageId) {
+        scrollToBottom();
+      }
       
       // 标记流式响应完成，并保存当前聊天
       isStreamCompletedRef.current = true;
@@ -263,6 +343,7 @@ export default function Chat() {
     setModelError,
     saveCurrentChat,
     setIsModelReady,
+    searchParams
   ]);
 
   // 处理模型选择变更
@@ -350,6 +431,7 @@ export default function Chat() {
           onAbort={handleAbort}
           isLoading={isLoading}
           onBookmarkChange={handleBookmarkChange}
+          currentChatId={currentChatId}
         />
       </div>
       

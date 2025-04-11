@@ -67,3 +67,24 @@
   position: relative;
   z-index: 1;
 }
+
+/* 消息高亮效果动画 */
+@keyframes message-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.message-highlight {
+  animation: message-highlight-pulse 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+  position: relative;
+  z-index: 1;
+}

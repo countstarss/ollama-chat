@@ -19,6 +19,8 @@ export interface DisplayMessage extends ChatMessageType {
   summary?: string;    // 消息摘要
   isMarked?: boolean;  // 是否被标记
   isStarred?: boolean; // 是否被收藏
+  createdAt?: number; // 创建时间
+  chatId?: string;    // 消息所属聊天ID
 }
 
 interface ChatMessageProps {
@@ -255,6 +257,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
                 successText="已收藏消息"
                 isStarred={messageStarred}
                 setIsStarred={setMessageStarred}
+                message={message}  // 传递完整的消息对象
               />
               <CopyButton 
                 text={contentToDisplay} 
