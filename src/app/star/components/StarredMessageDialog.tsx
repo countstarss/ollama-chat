@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { StarredMessage } from '@/services/starStorageService';
-import { Star, Trash } from 'lucide-react';
+import { Star, Trash, Layers } from 'lucide-react';
 import { CopyButton } from '@/components/button/CopyButton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -88,22 +88,39 @@ export function StarredMessageDialog({
     setIsDeleteAlertOpen(false);
   };
 
+  // 判断是否为集合类型
+  const isCollection = message.isCollection || message.role === 'collection';
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-2 border-b">
             <DialogTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-              <span>收藏内容</span>
+              {isCollection ? (
+                <>
+                  <Layers className="h-5 w-5 text-purple-500" />
+                  <span>收藏集合</span>
+                </>
+              ) : (
+                <>
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  <span>收藏内容</span>
+                </>
+              )}
             </DialogTitle>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <span className="text-gray-500 dark:text-gray-400">
                 收藏于 {formatFullTime(message.starredAt)}
+                {isCollection && (
+                  <span className="ml-2 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                    集合
+                  </span>
+                )}
               </span>
               <div className="flex gap-2">
                 <CopyButton 
-                  text={message.content} 
+                  text={message.mainContent || message.content} 
                   variant="subtle" 
                   size="sm"
                   successText="已复制全部内容"
@@ -122,7 +139,7 @@ export function StarredMessageDialog({
           <div className="py-4 flex-1 overflow-y-auto">
             <div className="prose prose-sm dark:prose-invert max-w-full">
               <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
-                {message.mainContent}
+                {message.mainContent || message.content}
               </ReactMarkdown>
             </div>
           </div>
@@ -138,7 +155,7 @@ export function StarredMessageDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除这条收藏消息吗？此操作无法撤销。
+              确定要删除这条{isCollection ? "收藏集合" : "收藏消息"}吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

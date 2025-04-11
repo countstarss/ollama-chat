@@ -1,5 +1,9 @@
 import { openDB, DBSchema, IDBPDatabase } from "idb";
 import { DisplayMessage } from "@/components/chat/ChatMessage";
+import { v4 as uuidv4 } from "uuid";
+
+// 扩展消息角色类型，添加collection类型
+type ExtendedRole = "user" | "assistant" | "system" | "error" | "collection";
 
 // 定义数据库结构
 interface StarredMessagesDB extends DBSchema {
@@ -11,10 +15,13 @@ interface StarredMessagesDB extends DBSchema {
 }
 
 // 扩展收藏消息类型，添加标题字段
-export interface StarredMessage extends DisplayMessage {
+export interface StarredMessage extends Omit<DisplayMessage, "role"> {
+  role: ExtendedRole;
   starredAt: Date;
   title: string;
   chatId?: string;
+  isCollection?: boolean;
+  collectionMessages?: DisplayMessage[];
 }
 
 // 数据库名称和版本
@@ -47,6 +54,45 @@ const starStorageService = {
 
     await db.put("starredMessages", starredMessage);
     return starredMessage;
+  },
+
+  // 创建收藏集合（包含多条消息）
+  async saveCollectionMessage(
+    messages: DisplayMessage[],
+    collectionName: string,
+    chatId?: string
+  ): Promise<StarredMessage> {
+    const db = await getDB();
+
+    // 为集合创建一个摘要内容
+    const summary = `${messages.length}条消息: ${
+      messages[0]?.mainContent?.substring(0, 50) ||
+      messages[0]?.content?.substring(0, 50) ||
+      "..."
+    }${messages.length > 1 ? "..." : ""}`;
+
+    // 构建集合收藏消息对象
+    const collectionMessage: StarredMessage = {
+      id: uuidv4(), // 生成唯一ID
+      role: "collection", // 使用特殊角色标识集合
+      content: summary,
+      mainContent: messages
+        .map(
+          (m) =>
+            `## ${m.role === "user" ? "用户" : "AI助手"}\n\n${
+              m.mainContent || m.content
+            }`
+        )
+        .join("\n\n---\n\n"),
+      starredAt: new Date(),
+      title: collectionName,
+      chatId: chatId, // 保存会话ID，便于导航
+      isCollection: true, // 标记为集合
+      collectionMessages: messages, // 保存原始消息
+    };
+
+    await db.put("starredMessages", collectionMessage);
+    return collectionMessage;
   },
 
   // 获取所有收藏消息

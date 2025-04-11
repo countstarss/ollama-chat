@@ -110,10 +110,26 @@ export function StarredMessages() {
 
   // 处理导航到原始聊天
   const handleNavigateToChat = useCallback((message: StarredMessage) => {
+    // 判断是否为集合类型
+    const isCollection = message.isCollection || message.role === 'collection';
+    
+    if (isCollection && message.collectionMessages && message.collectionMessages.length > 0) {
+      // 取集合中的第一条消息
+      const firstMessage = message.collectionMessages[0];
+      
+      // 如果第一条消息有chatId，则导航到该消息
+      if (firstMessage.chatId) {
+        router.push(`/?chatId=${firstMessage.chatId}&messageId=${firstMessage.id}`);
+        return;
+      }
+    }
+    
+    // 非集合消息或集合没有子消息，使用当前消息的chatId
     if (!message.chatId) {
       toastService.error('无法找到原始聊天');
       return;
     }
+    
     // 使用chatId导航，并添加messageId参数以便定位到特定消息
     router.push(`/?chatId=${message.chatId}&messageId=${message.id}`);
   }, [router]);
@@ -159,7 +175,7 @@ export function StarredMessages() {
     <div className="container mx-auto py-8 px-4 max-w-5xl">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回聊天
           </Button>

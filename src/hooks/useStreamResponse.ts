@@ -28,7 +28,7 @@ export function useStreamResponse() {
         let errorData;
         try {
           errorData = await response.json();
-        } catch (_) {
+        } catch {
           // 如果无法解析JSON，尝试获取文本
           const textError = await response.text();
           throw new Error(
@@ -67,7 +67,6 @@ export function useStreamResponse() {
       let currentThinkContent = "";
       let currentMainContent = ""; // 用于拼接主要内容
       let thinkingDone = false;
-      let accumulatedJson = ""; // 用于拼接 JSON 分析任务的输出
 
       // MARK: 添加超时保护
       let lastActivityTimestamp = Date.now();
@@ -272,8 +271,6 @@ export function useStreamResponse() {
         );
         return true;
       } catch (error) {
-        toastService.error("流式API调用失败");
-
         // 检查是否是中断错误
         if (
           error instanceof Error &&

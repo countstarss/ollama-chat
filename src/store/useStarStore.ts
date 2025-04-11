@@ -20,6 +20,12 @@ interface StarState {
   // 添加星标消息
   addStar: (message: DisplayMessage) => Promise<boolean>;
 
+  // 批量添加星标消息
+  batchStarMessages: (
+    messages: DisplayMessage[],
+    collectionName: string
+  ) => Promise<boolean>;
+
   // 移除星标消息
   removeStar: (messageId: string) => Promise<boolean>;
 
@@ -94,6 +100,38 @@ export const useStarStore = create<StarState>()(
         } catch (error) {
           console.error("收藏消息失败:", error);
           toastService.error("收藏消息失败");
+          return false;
+        }
+      },
+
+      // 批量添加星标消息
+      batchStarMessages: async (
+        messages: DisplayMessage[],
+        collectionName: string
+      ) => {
+        try {
+          // 获取当前聊天ID，假设所有消息来自同一聊天
+          const chatId = messages[0]?.chatId;
+
+          // 使用集合收藏方法
+          const collectionMessage =
+            await starStorageService.saveCollectionMessage(
+              messages,
+              collectionName,
+              chatId
+            );
+
+          // 更新状态
+          const { starredMessages } = get();
+          set({
+            starredMessages: [...starredMessages, collectionMessage],
+            hasInitialized: true, // 确保标记为已初始化
+          });
+
+          return true;
+        } catch (error) {
+          console.error("批量收藏消息失败:", error);
+          toastService.error("批量收藏消息失败");
           return false;
         }
       },

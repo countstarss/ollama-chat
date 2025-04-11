@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { DisplayMessage } from "@/components/chat/ChatMessage";
-import { useStarStore } from "@/store/useStarStore";
 import toastService from "@/services/toastService";
 
 interface SelectionState {
@@ -20,9 +19,7 @@ interface SelectionState {
   // 自动选择设置
   setAutoSelectEnabled: (enabled: boolean) => void;
 
-  // 批量操作
-  groupStarSelected: () => Promise<boolean>;
-  combineSelected: () => string;
+  // 汇总操作
   summarizeSelected: () => Promise<string | null>;
   promptSummarizeSelected: () => string;
 }
@@ -102,71 +99,6 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
   // 自动选择设置
   setAutoSelectEnabled: (enabled) => set({ autoSelectEnabled: enabled }),
 
-  // 批量操作 - 批量收藏
-  groupStarSelected: async () => {
-    const { selectedMessages } = get();
-    if (selectedMessages.length === 0) {
-      toastService.info("请先选择要收藏的消息");
-      return false;
-    }
-
-    try {
-      // 获取 useStarStore 的 addStar 方法
-      const { addStar } = useStarStore.getState();
-
-      // 合并所选消息的内容，并添加更多结构和格式
-      const sortedMessages = [...selectedMessages].sort((a, b) => {
-        // 确保消息按照原始顺序排列
-        const aIndex = parseInt(a.id.split("-")[1] || "0");
-        const bIndex = parseInt(b.id.split("-")[1] || "0");
-        return aIndex - bIndex;
-      });
-
-      // 创建更结构化的内容
-      const combinedContent =
-        `# 消息集合 (${new Date().toLocaleString("zh-CN")})\n\n` +
-        sortedMessages
-          .map((msg, index) => {
-            const roleText = msg.role === "user" ? "用户" : "助手";
-            return `## ${index + 1}. ${roleText}消息\n\n${msg.content}\n`;
-          })
-          .join("\n\n---\n\n");
-
-      // 使用标签标记这是一个分组收藏
-      const result = await addStar(combinedContent, [
-        "group-star",
-        `messages-${selectedMessages.length}`,
-      ]);
-
-      if (result) {
-        toastService.success(`已收藏 ${selectedMessages.length} 条消息`);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error("批量收藏失败:", error);
-      toastService.error("批量收藏失败");
-      return false;
-    }
-  },
-
-  combineSelected: () => {
-    const { selectedMessages } = get();
-    // 合并所有选中消息的内容
-    return selectedMessages
-      .sort((a, b) => {
-        // 确保消息按照原始顺序排列
-        const aIndex = parseInt(a.id.split("-")[1] || "0");
-        const bIndex = parseInt(b.id.split("-")[1] || "0");
-        return aIndex - bIndex;
-      })
-      .map(
-        (msg) => `${msg.role === "user" ? "用户: " : "助手: "}\n${msg.content}`
-      )
-      .join("\n\n---\n\n");
-  },
-
   // 生成摘要提示
   promptSummarizeSelected: () => {
     const { selectedMessages } = get();
@@ -187,8 +119,24 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     try {
       toastService.info("正在生成汇总内容...");
 
-      // 获取对话内容和提示
-      const dialogContent = get().combineSelected();
+      // 获取消息内容并按顺序排序
+      const sortedMessages = [...selectedMessages].sort((a, b) => {
+        // 确保消息按照原始顺序排列
+        const aIndex = parseInt(a.id.split("-")[1] || "0");
+        const bIndex = parseInt(b.id.split("-")[1] || "0");
+        return aIndex - bIndex;
+      });
+
+      // 合并所有选中消息的内容
+      const dialogContent = sortedMessages
+        .map(
+          (msg) =>
+            `${msg.role === "user" ? "用户: " : "助手: "}\n${
+              msg.mainContent || msg.content
+            }`
+        )
+        .join("\n\n---\n\n");
+
       const prompt = get().promptSummarizeSelected();
 
       // 准备API请求
@@ -222,7 +170,20 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
       toastService.error("汇总内容失败，请稍后再试");
 
       // 发生错误时，返回原始合并内容
-      return get().combineSelected();
+      const sortedMessages = [...selectedMessages].sort((a, b) => {
+        const aIndex = parseInt(a.id.split("-")[1] || "0");
+        const bIndex = parseInt(b.id.split("-")[1] || "0");
+        return aIndex - bIndex;
+      });
+
+      return sortedMessages
+        .map(
+          (msg) =>
+            `${msg.role === "user" ? "用户: " : "助手: "}\n${
+              msg.mainContent || msg.content
+            }`
+        )
+        .join("\n\n---\n\n");
     }
   },
 }));
