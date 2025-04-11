@@ -256,7 +256,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
         ref={containerRef}
         className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent relative"
       >
-        <div className="w-full pb-4 pt-4">
+        <div className="w-full pb-24 pt-4">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}

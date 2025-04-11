@@ -57,7 +57,7 @@ export function SelectionToolbar() {
 
   return (
     <motion.div 
-      className="w-[50vw] max-w-4xl mx-auto"
+      className="w-fit max-w-4xl mx-auto"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 20, opacity: 0 }}

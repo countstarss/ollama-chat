@@ -28,7 +28,7 @@ interface StarState {
 // 创建Store，添加持久化
 export const useStarStore = create<StarState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       starredMessages: [],
       isLoading: false,
 

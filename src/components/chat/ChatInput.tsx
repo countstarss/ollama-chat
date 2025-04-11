@@ -47,7 +47,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
   return (
     <form 
       onSubmit={handleSubmit} 
-      className="w-[80vw] max-w-4xl mx-auto rounded-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
+      className="w-[80%] max-w-4xl mx-auto rounded-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
     >
       <div className="flex items-center space-x-2">
         <textarea

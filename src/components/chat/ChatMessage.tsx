@@ -135,7 +135,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isActive = fa
 
   // 添加外层容器的类
   const containerClasses = cn(
-    "flex m-3 pb-24", 
+    "flex m-3", 
     isUser ? "justify-end" : "justify-start", 
     "transition-all duration-300",
     isActive && "scroll-mt-16", // 当消息激活时添加滚动边距，避免被顶部元素遮挡

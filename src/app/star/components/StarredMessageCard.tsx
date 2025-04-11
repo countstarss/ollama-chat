@@ -18,10 +18,11 @@ export function StarredMessageCard({
   formatTime
 }: StarredMessageCardProps) {
   return (
-    <Card key={message.id} className="overflow-hidden">
+    <Card key={message.id} className="overflow-hidden cursor-pointer" onClick={onClick}>
       <CardHeader className="bg-gray-50 dark:bg-gray-800 px-4 py-3 flex flex-row justify-between items-center">
         <div className="flex items-center">
           <Star className="h-4 w-4 text-yellow-500 mr-2" />
+          <span className="text-lg  dark:text-gray-400 mx-2">Title</span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {formatTime(message.createdAt)}
           </span>
@@ -54,12 +55,12 @@ export function StarredMessageCard({
       </CardContent>
       {message.content.length > 300 && (
         <CardFooter className="flex justify-end p-4 pt-0">
-          <button 
+          {/* <button 
             className="text-blue-500 hover:text-blue-600 text-sm font-medium"
             onClick={() => onClick()}
           >
             查看更多
-          </button>
+          </button> */}
         </CardFooter>
       )}
     </Card>
