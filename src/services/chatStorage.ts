@@ -112,7 +112,7 @@ export const deleteChat = async (chatId: string): Promise<void> => {
   try {
     const db = await openDatabase();
     await db.delete(STORE_NAME, chatId);
-  } catch (error) {
+  } catch {
     toastService.error(`删除聊天会话失败 ${chatId}`);
     // 尝试从localStorage删除
     try {
@@ -174,7 +174,7 @@ export const clearAllChats = async (): Promise<void> => {
     const db = await openDatabase();
     await db.clear(STORE_NAME);
     toastService.success("所有聊天会话已清除");
-  } catch (error) {
+  } catch {
     toastService.error("清除所有聊天会话失败");
   }
 };

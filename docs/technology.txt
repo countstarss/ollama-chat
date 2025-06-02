@@ -1,0 +1,31 @@
+Next.js 开发指南
+
+Next.js 是一个基于 React 的全栈 Web 框架，提供了许多开箱即用的功能。
+
+主要特性：
+1. 服务端渲染 (SSR) - 提供更好的 SEO 和首屏加载速度
+2. 静态站点生成 (SSG) - 在构建时预生成页面
+3. API 路由 - 可以创建 API 端点而无需单独的后端服务器
+4. 文件系统路由 - 基于文件结构自动生成路由
+5. 图片优化 - 自动优化图片大小和格式
+6. CSS 支持 - 内置 CSS 模块和 Sass 支持
+
+TypeScript 集成：
+Next.js 提供了完整的 TypeScript 支持。只需创建 tsconfig.json 文件，Next.js 会自动配置 TypeScript。
+
+API 路由创建：
+在 app/api 目录下创建文件即可定义 API 端点。例如：
+- app/api/users/route.ts 对应 /api/users 端点
+- 支持 GET、POST、PUT、DELETE 等 HTTP 方法
+
+中间件：
+可以在 middleware.ts 文件中定义中间件，用于请求预处理、身份验证等。
+
+部署：
+Next.js 应用可以部署到 Vercel、Netlify、AWS 等多种平台。Vercel 是 Next.js 的官方推荐部署平台。
+
+性能优化：
+- 使用 Image 组件进行图片优化
+- 利用 dynamic import 进行代码分割
+- 使用 getStaticProps 和 getServerSideProps 进行数据预取
+- 配置适当的缓存策略 
