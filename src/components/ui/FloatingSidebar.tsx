@@ -1,13 +1,22 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { ChevronUp, ChevronDown, Bookmark, BookmarkCheck, Menu, X, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { DisplayMessage } from '@/components/chat/ChatMessage';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BookmarkInput } from './BookmarkInput';
-import { BookmarkList } from './BookmarkList';
-import { useFloatingSidebar } from '@/components/context/floating-sidebar-context';
+import React, { useState, useRef } from "react";
+import {
+  ChevronUp,
+  ChevronDown,
+  Bookmark,
+  BookmarkCheck,
+  Menu,
+  X,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DisplayMessage } from "@/components/chat/ChatMessage";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookmarkInput } from "./BookmarkInput";
+import { BookmarkList } from "./BookmarkList";
+import { useFloatingSidebar } from "@/components/context/floating-sidebar-context";
 
 interface FloatingSidebarProps {
   onPrevious: () => void;
@@ -34,12 +43,12 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
   onJumpToMessage,
   onSaveBookmark,
   autoHighlight,
-  onToggleAutoHighlight
+  onToggleAutoHighlight,
 }) => {
   const [isOutlineExpanded, setIsOutlineExpanded] = useState(false);
   const [showBookmarkInput, setShowBookmarkInput] = useState(false);
   const outlineRef = useRef<HTMLDivElement>(null);
-  
+
   // 使用FloatingSidebar状态钩子
   const { isFloatingSidebarVisible } = useFloatingSidebar();
 
@@ -51,7 +60,7 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isMarked) {
       onMark(); // 如果已标记，则取消标记
     } else {
@@ -83,21 +92,21 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
   const outlineRightOffset = "right-14";
 
   return (
-    <motion.div 
+    <motion.div
       className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-20 pointer-events-none h-[60vh] max-h-[600px] select-none"
       animate={{
-        translateX: isFloatingSidebarVisible ? 0 : '100%',
-        opacity: isFloatingSidebarVisible ? 1 : 0
+        translateX: isFloatingSidebarVisible ? 0 : "100%",
+        opacity: isFloatingSidebarVisible ? 1 : 0,
       }}
       transition={{
         duration: 0.3,
-        ease: "easeInOut"
+        ease: "easeInOut",
       }}
     >
       {/* 侧边按钮组 */}
       <div
         className={cn(
-          "absolute top-1/2 right-0 -translate-y-1/2",
+          "absolute top-1/2 -right-3 -translate-y-1/2",
           "flex flex-col gap-2 md:gap-3 flex-shrink-0 pointer-events-auto"
         )}
       >
@@ -135,7 +144,7 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
           className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md",
             autoHighlight
-              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+              ? "bg-blue-600 hover:bg-blue-700 text-white"
               : "bg-gray-200/85 dark:bg-gray-800/85 hover:bg-gray-300/90 dark:hover:bg-gray-700/90"
           )}
           title={autoHighlight ? "关闭自动高亮" : "开启自动高亮"}
@@ -168,14 +177,14 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
         {/* 书签输入弹出层 */}
         <AnimatePresence>
           {showBookmarkInput && (
-            <motion.div 
+            <motion.div
               className="absolute right-12 top-[72px] z-30 pointer-events-auto"
               initial={{ opacity: 0, scale: 0.9, x: 10 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.9, x: 10 }}
               transition={{ duration: 0.15 }}
             >
-              <BookmarkInput 
+              <BookmarkInput
                 onSave={handleSaveBookmark}
                 onCancel={handleCancelBookmark}
               />
@@ -189,7 +198,7 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
           className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-md",
             isOutlineExpanded
-              ? "bg-blue-500/90 hover:bg-blue-600/95 text-white"
+              ? "bg-blue-600 hover:bg-blue-600 text-white"
               : "bg-gray-200/85 dark:bg-gray-800/85 hover:bg-gray-300/90 dark:hover:bg-gray-700/90"
           )}
           title={isOutlineExpanded ? "关闭大纲" : "打开大纲"}
@@ -218,7 +227,7 @@ export const FloatingSidebar: React.FC<FloatingSidebarProps> = ({
             exit={{ x: "100%", opacity: 0 }}
             transition={springTransition}
           >
-            <BookmarkList 
+            <BookmarkList
               markedMessages={markedMessages}
               onJumpToMessage={onJumpToMessage}
               onClose={toggleOutline}

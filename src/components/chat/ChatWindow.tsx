@@ -212,7 +212,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     }
   };
   
-  // 处理保存自定义名称的书签
+  // MARK: SaveBookmark
+  // NOTE: 处理保存自定义名称的书签
   const handleSaveBookmark = (bookmarkName: string) => {
     if (!activeMessageId) return;
     
@@ -234,7 +235,8 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>((props, 
     }
   };
 
-  // 判断当前活动消息是否已标记
+  // MARK: 判断是否已标记
+  // NOTE: 判断当前活动消息是否已标记
   const isCurrentMessageMarked = () => {
     return activeMessageId ? isMessageMarked(activeMessageId) : false;
   };

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -8,8 +8,12 @@ interface ChatInputProps {
   isLoading: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, isLoading }) => {
-  const [inputValue, setInputValue] = useState('');
+export const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  onAbort,
+  isLoading,
+}) => {
+  const [inputValue, setInputValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // MARK: 处理输入变化
@@ -22,14 +26,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
     event?.preventDefault();
     if (inputValue.trim() && !isLoading) {
       onSendMessage(inputValue);
-      setInputValue('');
+      setInputValue("");
     }
   };
 
   // MARK: 处理键盘事件
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Submit on Enter press (Shift+Enter for new line)
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSubmit();
     }
@@ -38,16 +42,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
   // MARK: 自动调整高度
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset height
+      textareaRef.current.style.height = "auto"; // Reset height
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [inputValue]);
 
-
   return (
-    <form 
-      onSubmit={handleSubmit} 
-      className="w-[80%] max-w-4xl mx-auto rounded-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
+    <form
+      onSubmit={handleSubmit}
+      className="w-[80%] max-w-4xl mx-auto rounded-2xl p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
     >
       <div className="flex items-center space-x-2">
         <textarea
@@ -55,8 +58,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="..."
-          className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px]" 
+          placeholder=""
+          className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px] px-8"
           rows={1}
           disabled={isLoading}
         />
@@ -74,7 +77,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onAbort, is
             disabled={isLoading || !inputValue.trim()}
             className="px-4 py-2 bg-blue-600 text-white rounded-full disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 hover:scale-[1.02] transition-all duration-300 ring-inset"
           >
-            {isLoading ? '发送中...' : '发送'}
+            {isLoading ? "发送中..." : "发送"}
           </button>
         )}
       </div>
