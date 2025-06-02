@@ -1,10 +1,10 @@
-import { RagChat } from "@/components/RagChat";
+import Chat from "@/components/chat/Chat";
 import React from "react";
 
 const page = () => {
   return (
     <div className="flex flex-col h-full w-full">
-      <RagChat />
+      <Chat mode="rag" />
     </div>
   );
 };
