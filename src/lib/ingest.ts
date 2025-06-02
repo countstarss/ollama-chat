@@ -131,6 +131,35 @@ export async function clearIndex() {
   }
 }
 
+// NOTE: 增量导入指定文件
+export async function ingestFiles(filePaths: string[]) {
+  if (filePaths.length === 0) return 0;
+
+  console.log("👏 开始增量导入指定文件...");
+
+  try {
+    await vectorStore.initialize();
+
+    const splitter = new SimpleTextSplitter(512, 64);
+
+    let totalDocuments = 0;
+
+    for (const filePath of filePaths) {
+      const documents = await processFile(filePath, splitter);
+      if (documents.length > 0) {
+        await vectorStore.addDocuments(documents);
+        totalDocuments += documents.length;
+      }
+    }
+
+    console.log(`✅ 增量导入完成，共处理 ${totalDocuments} 个文档块`);
+    return totalDocuments;
+  } catch (error) {
+    console.error("❌ 增量导入失败:", error);
+    throw error;
+  }
+}
+
 // NOTE: 如果直接运行此脚本
 // 检查是否作为主模块运行
 const isMainModule =
