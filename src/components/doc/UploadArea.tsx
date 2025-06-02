@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Hourglass,
 } from "lucide-react";
+import { useUploadPanelStore } from "@/store/useUploadPanelStore";
 
 // 根据扩展返回图标
 function getFileIcon(name: string) {
@@ -60,6 +61,7 @@ function getStatusBadge(status: string) {
 }
 
 export const UploadArea: React.FC<{ libraryId?: string }> = ({ libraryId }) => {
+  const { isOpen } = useUploadPanelStore();
   // MARK: useDocStore
   const { addFiles, docs, syncAll } = useDocStore(libraryId);
 
@@ -76,8 +78,10 @@ export const UploadArea: React.FC<{ libraryId?: string }> = ({ libraryId }) => {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 w-full h-full bg-white dark:bg-gray-800">
       {/* 上传区域 */}
       <div
         onDragOver={(e) => e.preventDefault()}
