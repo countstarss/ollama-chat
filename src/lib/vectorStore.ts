@@ -88,7 +88,11 @@ export class RAGVectorStore {
   }
 
   // MARK: 查询相似文档
-  async query(queryText: string, topK: number = 4) {
+  async query(
+    queryText: string,
+    topK: number = 4,
+    where?: Record<string, unknown>
+  ) {
     if (!this.collection) {
       throw new Error("向量存储未初始化，请先调用 initialize()");
     }
@@ -98,6 +102,7 @@ export class RAGVectorStore {
     const results = await this.collection.query({
       queryEmbeddings: [queryEmbedding],
       nResults: topK,
+      where,
     });
 
     // MARK: 格式化结果

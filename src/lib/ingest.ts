@@ -133,7 +133,7 @@ export async function clearIndex() {
 
 // NOTE: 增量导入指定文件
 // MARK: 增量导入
-export async function ingestFiles(filePaths: string[]) {
+export async function ingestFiles(filePaths: string[], libraryId?: string) {
   if (filePaths.length === 0) return 0;
 
   console.log("👏 开始增量导入指定文件...");
@@ -146,7 +146,13 @@ export async function ingestFiles(filePaths: string[]) {
     let totalDocuments = 0;
 
     for (const filePath of filePaths) {
-      const documents = await processFile(filePath, splitter);
+      let documents = await processFile(filePath, splitter);
+      if (libraryId) {
+        documents = documents.map((doc) => ({
+          ...doc,
+          metadata: { ...doc.metadata, libraryId },
+        }));
+      }
       if (documents.length > 0) {
         await vectorStore.addDocuments(documents);
         totalDocuments += documents.length;

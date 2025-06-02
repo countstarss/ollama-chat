@@ -28,9 +28,10 @@ import { useRagMessage } from "@/hooks/useRagMessage";
 
 interface ChatProps {
   mode?: "chat" | "rag";
+  libraryId?: string | null;
 }
 
-export default function Chat({ mode = "chat" }: ChatProps) {
+export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [modelError, setModelError] = useState<string | null>(null);
@@ -276,6 +277,7 @@ export default function Chat({ mode = "chat" }: ChatProps) {
     scrollToBottom,
     saveCurrentChat,
     selectedModel,
+    libraryId,
   });
 
   // MARK: 处理发送消息 - 根据模式选择不同处理逻辑

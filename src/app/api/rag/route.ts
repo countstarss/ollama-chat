@@ -9,7 +9,7 @@ const ollama = new Ollama({
 
 export async function POST(req: NextRequest) {
   try {
-    const { query } = await req.json();
+    const { query, libraryId } = await req.json();
 
     if (!query) {
       return NextResponse.json({ error: "查询内容不能为空" }, { status: 400 });
@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
 
     // ② 检索相关文档
     console.log("🔍 检索相关文档...");
-    const contexts = await vectorStore.query(query, 4);
+    const where = libraryId ? { libraryId } : undefined;
+    const contexts = await vectorStore.query(query, 4, where);
 
     if (contexts.length === 0) {
       return NextResponse.json({
@@ -72,6 +73,7 @@ ${contextBlock}
       answer: response.response,
       sources,
       query,
+      libraryId: libraryId || null,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

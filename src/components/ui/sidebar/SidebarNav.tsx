@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLibrarySession } from "@/hooks/useLibrarySession";
+import { useRouter } from "next/navigation";
 
 export function SidebarNav() {
   const [openRecently, setOpenRecently] = useState(true);
@@ -50,7 +51,13 @@ export function SidebarNav() {
     refreshRecentChats,
   } = useChatSession();
   // MARK: 知识库hook
-  const { createLibrary } = useLibrarySession();
+  const {
+    createLibrary,
+    libraries,
+    reload: reloadLibraries,
+  } = useLibrarySession();
+  const libraryIdActive = searchParams.get("libraryId");
+  const routerNav = useRouter();
 
   // 修改仅在初始状态或聊天列表长度变化时自动展开，而不是持续强制展开
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -213,7 +220,7 @@ export function SidebarNav() {
           <DropdownMenuItem
             onClick={async () => {
               const id = await createLibrary();
-              window.location.href = `/?libraryId=${id}`;
+              routerNav.push(`/library?libraryId=${id}`);
             }}
             className="gap-2"
           >
@@ -263,7 +270,7 @@ export function SidebarNav() {
         </CollapsibleContent>
       </Collapsible>
       <Collapsible
-        // MARK: Knowledge
+        // MARK: Libraries
         open={openKnowledge}
         onOpenChange={setOpenKnowledge}
       >
@@ -284,10 +291,24 @@ export function SidebarNav() {
             />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="pl-2 space-y-1">
-          <div className="text-sm text-muted-foreground px-2 py-1">
-            暂无知识库
-          </div>
+        <CollapsibleContent className="pl-2 space-y-1 max-h-[40vh] overflow-y-auto">
+          {libraries.length === 0 ? (
+            <div className="text-sm text-muted-foreground px-2 py-1">
+              暂无知识库
+            </div>
+          ) : (
+            libraries.map((lib) => (
+              <SidebarRecentItem
+                key={`lib-${lib.id}`}
+                id={lib.id}
+                label={lib.name}
+                isActive={libraryIdActive === lib.id}
+                onClick={() => routerNav.push(`/library?libraryId=${lib.id}`)}
+                onRename={() => reloadLibraries()}
+                onDelete={() => reloadLibraries()}
+              />
+            ))
+          )}
         </CollapsibleContent>
       </Collapsible>
 

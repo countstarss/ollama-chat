@@ -15,6 +15,7 @@ interface RagParams {
     model?: ModelConfig
   ) => void | Promise<void>;
   selectedModel: ModelConfig | null | undefined;
+  libraryId?: string | null;
 }
 
 export function useRagMessage({
@@ -25,6 +26,7 @@ export function useRagMessage({
   scrollToBottom,
   saveCurrentChat,
   selectedModel,
+  libraryId = null,
 }: RagParams) {
   const handleRagMessage = useCallback(
     async (userInput: string) => {
@@ -62,7 +64,7 @@ export function useRagMessage({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ query: userInput }),
+          body: JSON.stringify({ query: userInput, libraryId }),
         });
 
         if (!response.ok) {
@@ -131,6 +133,7 @@ export function useRagMessage({
       saveCurrentChat,
       messages,
       selectedModel,
+      libraryId,
     ]
   );
 

@@ -59,9 +59,9 @@ function getStatusBadge(status: string) {
   }
 }
 
-export const UploadArea: React.FC = () => {
+export const UploadArea: React.FC<{ libraryId?: string }> = ({ libraryId }) => {
   // MARK: useDocStore
-  const { addFiles, docs, syncAll } = useDocStore();
+  const { addFiles, docs, syncAll } = useDocStore(libraryId);
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
