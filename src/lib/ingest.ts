@@ -132,6 +132,7 @@ export async function clearIndex() {
 }
 
 // NOTE: 增量导入指定文件
+// MARK: 增量导入
 export async function ingestFiles(filePaths: string[]) {
   if (filePaths.length === 0) return 0;
 

@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Star,
   BookOpen,
+  MessageCircle,
 } from "lucide-react";
 import {
   Collapsible,
@@ -22,6 +23,13 @@ import { useChatSession } from "@/hooks/useChatSession";
 import { useSearchParams } from "next/navigation";
 import toastService from "@/services/toastService";
 import eventService, { AppEvent } from "@/services/eventService";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useLibrarySession } from "@/hooks/useLibrarySession";
 
 export function SidebarNav() {
   const [openRecently, setOpenRecently] = useState(true);
@@ -41,6 +49,8 @@ export function SidebarNav() {
     removeChat,
     refreshRecentChats,
   } = useChatSession();
+  // MARK: 知识库hook
+  const { createLibrary } = useLibrarySession();
 
   // 修改仅在初始状态或聊天列表长度变化时自动展开，而不是持续强制展开
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -187,14 +197,30 @@ export function SidebarNav() {
 
   return (
     <div className="flex-1 px-3 py-4  scrollbar-hide">
-      <Button
-        variant="default"
-        className="w-full flex items-center gap-2 sticky top-0 mb-4"
-        onClick={handleNewChat}
-      >
-        <Plus className="h-4 w-4" />
-        <span>新建聊天</span>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="default"
+            className="w-full flex items-center gap-2 sticky top-0 mb-4"
+          >
+            <Plus className="h-4 w-4" /> 新建
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-44">
+          <DropdownMenuItem onClick={handleNewChat} className="gap-2">
+            <MessageCircle className="h-4 w-4" /> 新建 Chat
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={async () => {
+              const id = await createLibrary();
+              window.location.href = `/?libraryId=${id}`;
+            }}
+            className="gap-2"
+          >
+            <BookOpen className="h-4 w-4" /> 新建知识库
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <SidebarNavItem
         // MARK: Models
