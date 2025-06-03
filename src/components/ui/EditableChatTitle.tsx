@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Check, X, Edit2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import toastService from '@/services/toastService';
+import React, { useState, useEffect } from "react";
+import { Check, X, Edit2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface EditableChatTitleProps {
   title: string;
@@ -10,14 +9,14 @@ interface EditableChatTitleProps {
   className?: string;
 }
 
-export function EditableChatTitle({ 
-  title, 
-  onRename, 
-  className = '' 
+export function EditableChatTitle({
+  title,
+  onRename,
+  className = "",
 }: EditableChatTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title || "未命名聊天");
-  
+
   // 当外部标题变化时更新内部状态
   useEffect(() => {
     // 确保有默认值，避免空标题
@@ -27,59 +26,59 @@ export function EditableChatTitle({
       setIsEditing(false);
     }
   }, [title]);
-  
+
   // 处理开始编辑
   const handleStartEditing = () => {
     setIsEditing(true);
     setEditedTitle(title || "未命名聊天");
   };
-  
+
   // MARK: 处理标题保存
   const handleSave = () => {
     const trimmedTitle = editedTitle.trim();
     if (trimmedTitle) {
       console.log(`[EditableChatTitle] 保存新标题: ${trimmedTitle}`);
-      
+
       // 如果标题没有变化，不执行重命名操作
       if (trimmedTitle === title) {
-        console.log('[EditableChatTitle] 标题未变化，不执行重命名');
+        console.log("[EditableChatTitle] 标题未变化，不执行重命名");
         setIsEditing(false);
         return;
       }
-      
+
       // 调用外部重命名函数
       onRename(trimmedTitle);
-      console.log('[EditableChatTitle] 重命名回调已调用');
+      console.log("[EditableChatTitle] 重命名回调已调用");
     } else {
       // 如果用户输入空标题，自动重置为"未命名聊天"
       setEditedTitle("未命名聊天");
       console.log('[EditableChatTitle] 标题为空，重置为"未命名聊天"');
-      
+
       // 如果当前标题已经是"未命名聊天"，不执行重命名
       if (title !== "未命名聊天") {
         onRename("未命名聊天");
-        console.log('[EditableChatTitle] 重命名回调已调用 (重置为默认标题)');
+        console.log("[EditableChatTitle] 重命名回调已调用 (重置为默认标题)");
       }
     }
     setIsEditing(false);
   };
-  
+
   // 处理取消
   const handleCancel = () => {
     setIsEditing(false);
     setEditedTitle(title || "未命名聊天");
   };
-  
+
   // 处理输入变化
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditedTitle(e.target.value);
   };
-  
+
   // 处理键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSave();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       handleCancel();
     }
   };
@@ -96,17 +95,17 @@ export function EditableChatTitle({
             className="h-8 text-lg font-semibold max-w-[180px] sm:max-w-[250px]"
             placeholder="输入聊天名称..."
           />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleSave} 
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSave}
             className="h-7 w-7 text-green-500"
           >
             <Check className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleCancel}
             className="h-7 w-7 text-red-500"
           >
@@ -116,9 +115,9 @@ export function EditableChatTitle({
       ) : (
         <div className="flex items-center gap-1 group">
           <h1 className="text-xl font-semibold">{title || "未命名聊天"}</h1>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleStartEditing}
             className="h-7 w-7 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
           >
@@ -128,4 +127,4 @@ export function EditableChatTitle({
       )}
     </div>
   );
-} 
+}

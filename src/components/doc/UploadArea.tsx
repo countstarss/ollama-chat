@@ -113,7 +113,7 @@ export const UploadArea: React.FC<{ libraryId?: string }> = ({ libraryId }) => {
       {/* 文件列表分区 */}
       <div className="space-y-6">
         {/* 待上传区域 */}
-        <div>
+        <div className="overflow-y-auto h-full">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
             待上传 / 失败
             <span className="text-xs text-gray-500">
@@ -143,7 +143,7 @@ export const UploadArea: React.FC<{ libraryId?: string }> = ({ libraryId }) => {
         </div>
 
         {/* 已同步区域 */}
-        <div>
+        <div className="overflow-y-auto h-full">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
             已同步
             <span className="text-xs text-gray-500">

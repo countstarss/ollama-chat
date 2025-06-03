@@ -25,6 +25,7 @@ import { useFloatingSidebar } from "@/components/context/floating-sidebar-contex
 import { SelectionModeToggle } from "./SelectionModeToggle";
 import { useSearchParams } from "next/navigation";
 import { useRagMessage } from "@/hooks/useRagMessage";
+import { useLibrarySession } from "@/hooks/useLibrarySession";
 
 interface ChatProps {
   mode?: "chat" | "rag";
@@ -82,6 +83,30 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
   // MARK: 侧边栏
   const { isFloatingSidebarVisible, toggleFloatingSidebar } =
     useFloatingSidebar();
+
+  // 知识库相关
+  const { libraries, renameLibrary } = useLibrarySession();
+  const [libraryName, setLibraryName] = useState<string>("未命名知识库");
+
+  // 监听libraryId或libraries变化，同步当前库名称
+  useEffect(() => {
+    if (mode === "rag" && libraryId) {
+      const lib = libraries.find((l) => l.id === libraryId);
+      if (lib) {
+        setLibraryName(lib.name || "未命名知识库");
+      }
+    }
+  }, [mode, libraryId, libraries]);
+
+  // 处理知识库重命名
+  const handleRenameLibrary = useCallback(
+    (newTitle: string) => {
+      if (!libraryId) return;
+      renameLibrary(libraryId, newTitle);
+      setLibraryName(newTitle);
+    },
+    [libraryId, renameLibrary]
+  );
 
   // 初始化时设置当前选中的模型
   useEffect(() => {
@@ -470,9 +495,15 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
           {modelError && <div className="hidden" />}
 
           {mode === "rag" ? (
-            <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              RAG 知识问答
-            </h1>
+            <div className="flex items-center gap-2">
+              <EditableChatTitle
+                title={libraryName}
+                onRename={handleRenameLibrary}
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                RAG 知识问答
+              </span>
+            </div>
           ) : (
             <EditableChatTitle title={chatName} onRename={handleRenameChat} />
           )}

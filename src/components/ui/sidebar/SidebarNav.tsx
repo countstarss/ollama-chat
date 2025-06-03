@@ -54,6 +54,7 @@ export function SidebarNav() {
   const {
     createLibrary,
     libraries,
+    renameLibrary,
     reload: reloadLibraries,
   } = useLibrarySession();
   const libraryIdActive = searchParams.get("libraryId");
@@ -123,7 +124,7 @@ export function SidebarNav() {
     prevChatsLengthRef.current = recentChats.length;
   }, [recentChats.length, initialLoadComplete, userCollapsedRecently]);
 
-  // 手动刷新聊天列表
+  // MARK: 手动刷新聊天列表
   const handleRefreshChats = useCallback(async () => {
     if (isRefreshing) return;
 
@@ -162,6 +163,7 @@ export function SidebarNav() {
     };
   }, [refreshRecentChats]);
 
+  // MARK: Event/SUB
   // 监听聊天重命名事件
   useEffect(() => {
     const unsubscribe = eventService.subscribe((event: AppEvent) => {
@@ -304,7 +306,7 @@ export function SidebarNav() {
                 label={lib.name}
                 isActive={libraryIdActive === lib.id}
                 onClick={() => routerNav.push(`/library?libraryId=${lib.id}`)}
-                onRename={() => reloadLibraries()}
+                onRename={renameLibrary}
                 onDelete={() => reloadLibraries()}
               />
             ))

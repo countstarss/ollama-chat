@@ -188,7 +188,8 @@ export function useChatSession() {
         setRecentChats(chats);
         console.log("[useChatSession] 已更新最近聊天列表");
 
-        // 发布聊天重命名事件
+        // MARK: Event/PUB
+        // NOTE: 发布聊天重命名事件
         eventService.publish({
           type: "CHAT_RENAMED",
           chatId,
