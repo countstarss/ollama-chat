@@ -1,22 +1,29 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useSelectionStore } from '@/store/useSelectionStore';
-import { Button } from '@/components/ui/button';
-import { Layers, Star, X, ToggleLeft, ToggleRight, Combine } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import toastService from '@/services/toastService';
-import { useStarStore } from '@/store/useStarStore';
-import { StarCollectionInput } from '@/components/ui/star/StarCollectionInput';
+import React, { useState } from "react";
+import { useSelectionStore } from "@/store/useSelectionStore";
+import { Button } from "@/components/ui/button";
+import {
+  Layers,
+  Star,
+  X,
+  ToggleLeft,
+  ToggleRight,
+  Combine,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import toastService from "@/services/toastService";
+import { useStarStore } from "@/store/useStarStore";
+import { StarCollectionInput } from "@/components/ui/star/StarCollectionInput";
 
 export function SelectionToolbar() {
-  const { 
-    isSelectionMode, 
-    selectedMessages, 
-    toggleSelectionMode, 
-    clearSelection, 
+  const {
+    isSelectionMode,
+    selectedMessages,
+    toggleSelectionMode,
+    clearSelection,
     autoSelectEnabled,
-    setAutoSelectEnabled
+    setAutoSelectEnabled,
   } = useSelectionStore();
 
   // 使用useStarStore
@@ -40,69 +47,88 @@ export function SelectionToolbar() {
       const bIndex = parseInt(b.id.split("-")[1] || "0");
       return aIndex - bIndex;
     });
-    
+
     // 合并消息，优先使用mainContent
-    return sortedMessages.map(msg => 
-      `${msg.role === "user" ? "用户: " : "AI助手: "}\n${msg.mainContent || msg.content}`
-    ).join("\n\n---\n\n");
+    return sortedMessages
+      .map(
+        (msg) =>
+          `${msg.role === "user" ? "用户: " : "AI助手: "}\n${
+            msg.mainContent || msg.content
+          }`
+      )
+      .join("\n\n---\n\n");
   };
 
   // 处理批量收藏
   const handleGroupStar = async () => {
     if (selectedMessages.length === 0 || isGroupStarring) return;
-    
+
     // 显示收藏集合名称输入
     setShowCollectionInput(true);
   };
 
-  // 处理保存收藏集合
-  const handleSaveCollection = async (collectionName: string) => {
+  // 处理收藏集合名称确认
+  const handleCollectionNameConfirm = async (collectionName: string) => {
+    if (selectedMessages.length === 0 || isGroupStarring) return;
+
     setIsGroupStarring(true);
     try {
-      // 使用useStarStore的批量收藏方法
+      // 检查是否为RAG消息
+      const isRagMessages = selectedMessages.some((msg) => msg.libraryId);
+
+      // 如果是RAG消息，确保所有消息都来自同一个知识库
+      if (isRagMessages) {
+        const libraryId = selectedMessages[0].libraryId;
+        const allFromSameLibrary = selectedMessages.every(
+          (msg) => msg.libraryId === libraryId
+        );
+
+        if (!allFromSameLibrary) {
+          toastService.error("不能同时收藏来自不同知识库的消息");
+          return;
+        }
+      }
+
       const success = await batchStarMessages(selectedMessages, collectionName);
       if (success) {
-        toastService.success(`已收藏 ${selectedMessages.length} 条消息`);
-        // 收藏成功后清空选择
-        clearSelection();
+        toastService.success("批量收藏成功");
+        clearSelection(); // 清除选择
+        toggleSelectionMode(); // 退出选择模式
       }
-    } catch (error) {
-      console.error('批量收藏失败:', error);
-      toastService.error('批量收藏失败');
     } finally {
       setIsGroupStarring(false);
       setShowCollectionInput(false);
     }
   };
 
-  // 取消收藏集合
+  // MARK: 取消收藏集合
   const handleCancelCollection = () => {
     setShowCollectionInput(false);
   };
 
-  // 退出选择模式
+  // MARK: 退出选择模式
   const handleExit = () => {
     toggleSelectionMode();
   };
 
-  // 清除当前选择
+  // MARK: 清除当前选择
   const handleClearSelection = () => {
     clearSelection();
   };
 
-  // 切换自动选择功能
+  // MARK: 切换自动选择功能
   const handleToggleAutoSelect = () => {
     setAutoSelectEnabled(!autoSelectEnabled);
   };
 
   return (
     <>
-      <motion.div 
+      <motion.div
         className="w-fit max-w-4xl mx-auto"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
       >
         <div className="bg-white dark:bg-gray-800 rounded-full shadow-lg px-4 py-4 flex items-center gap-2 overflow-x-auto">
           {/* 显示选择计数 */}
@@ -136,17 +162,18 @@ export function SelectionToolbar() {
 
           {/* 批量操作按钮 */}
           <div className="h-6 border-l border-gray-300 dark:border-gray-600" />
-          
+
           {/* 组合内容并复制 */}
           <Button
             onClick={() => {
               if (selectionCount > 0) {
-                navigator.clipboard.writeText(combineSelectedContent())
+                navigator.clipboard
+                  .writeText(combineSelectedContent())
                   .then(() => {
-                    toastService.success('已复制对话内容');
+                    toastService.success("已复制对话内容");
                   })
                   .catch(() => {
-                    toastService.error('复制失败');
+                    toastService.error("复制失败");
                   });
               }
             }}
@@ -159,7 +186,8 @@ export function SelectionToolbar() {
             合并复制
           </Button>
 
-          {/* 批量添加到收藏 */}
+          {/* MARK: 批量添加到收藏
+           */}
           <Button
             variant="ghost"
             size="sm"
@@ -182,10 +210,10 @@ export function SelectionToolbar() {
 
           {/* 管理按钮 */}
           <div className="h-6 border-l border-gray-300 dark:border-gray-600" />
-          
+
           {/* 清空选择 */}
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={handleClearSelection}
             disabled={selectionCount === 0}
@@ -194,10 +222,10 @@ export function SelectionToolbar() {
             <Layers className="w-4 h-4" />
             <span>清空选择</span>
           </Button>
-          
+
           {/* 退出选择模式 */}
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={handleExit}
             className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 gap-1.5 text-sm whitespace-nowrap"
@@ -212,11 +240,11 @@ export function SelectionToolbar() {
       <AnimatePresence>
         {showCollectionInput && (
           <StarCollectionInput
-            onSave={handleSaveCollection}
+            onSave={handleCollectionNameConfirm}
             onCancel={handleCancelCollection}
           />
         )}
       </AnimatePresence>
     </>
   );
-} 
+}

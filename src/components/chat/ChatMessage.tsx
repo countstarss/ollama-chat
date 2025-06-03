@@ -34,6 +34,7 @@ export interface DisplayMessage extends ChatMessageType {
     content: string;
   }>;
   isRagMessage?: boolean; // 是否为 RAG 生成的消息
+  libraryId?: string; // 所属知识库ID (RAG)
 }
 
 interface ChatMessageProps {
@@ -56,6 +57,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   // 使用FloatingSidebar状态钩子
   const { isFloatingSidebarVisible } = useFloatingSidebar();
+  // console.log("message", message);
 
   // 使用Selection Store
   const {
@@ -345,6 +347,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               isStarred={messageStarred}
               setIsStarred={setMessageStarred}
               message={message} // 传递完整的消息对象
+              isRag={mode === "rag"} // 根据mode判断是否为RAG消息
+              currentLibraryId={mode === "rag" ? message.libraryId : undefined} // 只在RAG模式下传递libraryId
             />
             <CopyButton
               text={contentToDisplay}

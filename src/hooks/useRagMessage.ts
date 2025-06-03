@@ -38,6 +38,7 @@ export function useRagMessage({
         id: uuidv4(),
         role: "user",
         content: userInput,
+        libraryId: libraryId || undefined,
       };
       setMessages((prev) => [...prev, userMsg]);
 
@@ -50,6 +51,7 @@ export function useRagMessage({
         mainContent: "",
         isThinkingComplete: false,
         isRagMessage: true,
+        libraryId: libraryId || undefined,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 

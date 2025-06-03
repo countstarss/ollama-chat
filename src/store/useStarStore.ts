@@ -6,7 +6,7 @@ import starStorageService, {
 } from "@/services/starStorageService";
 import toastService from "@/services/toastService";
 
-// 定义星标状态接口
+// MARK: StarState
 interface StarState {
   starredMessages: StarredMessage[];
   isLoading: boolean;
@@ -55,7 +55,8 @@ export const useStarStore = create<StarState>()(
       searchQuery: "",
       hasInitialized: false, // 初始未初始化
 
-      // 初始化，从IndexedDB加载星标消息，但添加缓存控制
+      // MARK: 初始化
+      // NOTE: 从IndexedDB加载星标消息，但添加缓存控制
       init: async () => {
         // 如果已经初始化过且有数据，则直接返回，不重新加载
         const { hasInitialized, starredMessages } = get();
@@ -80,7 +81,7 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 添加星标消息
+      // MARK: 添加星标消息
       addStar: async (message: DisplayMessage) => {
         try {
           const { starredMessages } = get();
@@ -104,21 +105,24 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 批量添加星标消息
+      // MARK: 批量添加星标消息
       batchStarMessages: async (
         messages: DisplayMessage[],
         collectionName: string
       ) => {
         try {
-          // 获取当前聊天ID，假设所有消息来自同一聊天
-          const chatId = messages[0]?.chatId;
+          // 获取当前聊天ID和知识库ID，假设所有消息来自同一来源
+          const firstMessage = messages[0];
+          const chatId = firstMessage?.chatId;
+          const libraryId = firstMessage?.libraryId;
 
           // 使用集合收藏方法
           const collectionMessage =
             await starStorageService.saveCollectionMessage(
               messages,
               collectionName,
-              chatId
+              chatId,
+              libraryId
             );
 
           // 更新状态
@@ -136,7 +140,7 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 移除星标消息
+      // MARK: 移除星标消息
       removeStar: async (messageId: string) => {
         try {
           await starStorageService.removeStarredMessage(messageId);
@@ -164,13 +168,13 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 检查消息是否已收藏
+      // MARK: 检查消息是否已收藏
       isStarred: (messageId: string) => {
         const { starredMessages } = get();
         return starredMessages.some((m) => m.id === messageId);
       },
 
-      // 搜索收藏消息
+      // MARK: 搜索收藏消息
       searchStarredMessages: async (query: string) => {
         // 确保先初始化数据
         const { hasInitialized } = get();
@@ -188,7 +192,8 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 刷新收藏消息列表 - 当确实需要刷新时调用
+      // MARK: 刷新收藏消息列表
+      // NOTE: 当确实需要刷新时调用
       refreshStarredMessages: async () => {
         try {
           set({ isLoading: true });
@@ -212,7 +217,7 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 更新收藏消息标题
+      // MARK: 更新消息标题
       updateStarTitle: async (messageId: string, title: string) => {
         try {
           await starStorageService.updateStarredMessageTitle(messageId, title);
@@ -242,7 +247,7 @@ export const useStarStore = create<StarState>()(
         }
       },
 
-      // 获取收藏消息详情
+      // MARK: 获取消息详情
       getStarredMessage: (messageId: string) => {
         const { starredMessages } = get();
         return starredMessages.find((m) => m.id === messageId);

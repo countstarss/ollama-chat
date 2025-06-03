@@ -90,9 +90,17 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
       const lib = libraries.find((l) => l.id === libraryId);
       if (lib) {
         setLibraryName(lib.name || "未命名知识库");
-        // 同步历史消息
+        // 同步历史消息，确保每条消息都有 libraryId
         if (Array.isArray(lib.messages)) {
-          setMessages(lib.messages);
+          const messagesWithLibraryId = lib.messages.map((msg) => ({
+            ...msg,
+            libraryId: libraryId, // 确保每条消息都有 libraryId
+          }));
+          setMessages(messagesWithLibraryId);
+          console.log("[Chat] 加载知识库消息，添加 libraryId:", {
+            libraryId,
+            messageCount: messagesWithLibraryId.length,
+          });
         }
       }
     }
@@ -173,12 +181,14 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
               behavior: "smooth",
               block: "center",
             });
-            messageElement.classList.add("message-highlight");
+
+            // 添加高亮动画类
+            messageElement.classList.add("message-highlight-pulse");
 
             // 短暂高亮后移除效果
             setTimeout(() => {
-              messageElement.classList.remove("message-highlight");
-            }, 1500);
+              messageElement.classList.remove("message-highlight-pulse");
+            }, 2000); // 保持高亮2秒
 
             console.log(`[滚动控制] 已滚动到消息: ${messageToScrollTo}`);
           } else {

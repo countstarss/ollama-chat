@@ -69,10 +69,21 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (idx === -1) return;
 
     const existing = libs[idx].messages || [];
+    // 确保新消息都有正确的 libraryId
+    const messagesWithLibraryId = newMsgs.map((msg) => ({
+      ...msg,
+      libraryId: id, // 使用知识库ID
+    }));
+
     const updated: KnowledgeLibrary = {
       ...libs[idx],
-      messages: [...existing, ...newMsgs],
+      messages: [...existing, ...messagesWithLibraryId],
     };
+
+    console.log("[LibraryStore] 追加消息，添加 libraryId:", {
+      libraryId: id,
+      messageCount: messagesWithLibraryId.length,
+    });
 
     await saveLibrary(updated);
     set((state) => ({

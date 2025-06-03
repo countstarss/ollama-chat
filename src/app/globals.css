@@ -242,3 +242,58 @@
     /* Firefox */
   }
 }
+
+/* 消息高亮动画 */
+@keyframes highlightPulse {
+  0% {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: scale(1);
+  }
+
+  50% {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: scale(1.002);
+  }
+
+  100% {
+    background-color: transparent;
+    border-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.message-highlight-pulse {
+  animation: highlightPulse 2s ease-in-out;
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 深色模式下的高亮效果 */
+@media (prefers-color-scheme: dark) {
+  @keyframes highlightPulseDark {
+    0% {
+      background-color: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: scale(1);
+    }
+
+    50% {
+      background-color: rgba(59, 130, 246, 0.25);
+      border-color: rgba(59, 130, 246, 0.6);
+      transform: scale(1.002);
+    }
+
+    100% {
+      background-color: transparent;
+      border-color: transparent;
+      transform: scale(1);
+    }
+  }
+
+  .message-highlight-pulse {
+    animation: highlightPulseDark 2s ease-in-out;
+  }
+}

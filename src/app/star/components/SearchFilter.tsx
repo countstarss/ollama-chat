@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, Calendar, ChevronDown, X } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, Calendar, ChevronDown } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 interface SearchFilterProps {
   onSearch: (query: string, dateRange: { from?: Date; to?: Date }) => void;
@@ -12,7 +16,7 @@ interface SearchFilterProps {
 }
 
 export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -23,31 +27,34 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
 
   // 清除筛选
   const clearFilters = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setDateRange({});
     onClearFilters();
   };
 
   // 日期范围文本
   const dateRangeText = () => {
-    if (!dateRange.from && !dateRange.to) return '选择日期范围';
-    
+    if (!dateRange.from && !dateRange.to) return "选择日期范围";
+
     if (dateRange.from && dateRange.to) {
       if (dateRange.from.getTime() === dateRange.to.getTime()) {
-        return format(dateRange.from, 'yyyy-MM-dd');
+        return format(dateRange.from, "yyyy-MM-dd");
       }
-      return `${format(dateRange.from, 'yyyy-MM-dd')} 至 ${format(dateRange.to, 'yyyy-MM-dd')}`;
+      return `${format(dateRange.from, "yyyy-MM-dd")} 至 ${format(
+        dateRange.to,
+        "yyyy-MM-dd"
+      )}`;
     }
-    
+
     if (dateRange.from) {
-      return `${format(dateRange.from, 'yyyy-MM-dd')} 起`;
+      return `${format(dateRange.from, "yyyy-MM-dd")} 起`;
     }
-    
+
     if (dateRange.to) {
-      return `截至 ${format(dateRange.to, 'yyyy-MM-dd')}`;
+      return `截至 ${format(dateRange.to, "yyyy-MM-dd")}`;
     }
-    
-    return '选择日期范围';
+
+    return "选择日期范围";
   };
 
   return (
@@ -56,10 +63,10 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
         <Input
           placeholder="搜索收藏内容..."
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
-          onKeyDown={e => {
-            if (e.key === 'Enter') handleSearch();
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearch();
           }}
         />
         <Button onClick={handleSearch}>
@@ -67,7 +74,7 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
           搜索
         </Button>
       </div>
-      
+
       <div className="flex gap-2">
         <Popover open={showCalendar} onOpenChange={setShowCalendar}>
           <PopoverTrigger asChild>
@@ -82,10 +89,14 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
               initialFocus
               mode="range"
               defaultMonth={dateRange.from}
-              selected={dateRange.from && dateRange.to ? {
-                from: dateRange.from,
-                to: dateRange.to
-              } : undefined}
+              selected={
+                dateRange.from && dateRange.to
+                  ? {
+                      from: dateRange.from,
+                      to: dateRange.to,
+                    }
+                  : undefined
+              }
               onSelect={(range: { from?: Date; to?: Date } | undefined) => {
                 setDateRange(range || {});
                 if (range?.to) {
@@ -95,9 +106,9 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
               numberOfMonths={2}
             />
             <div className="flex justify-end p-2 border-t">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setDateRange({});
                   setShowCalendar(false);
@@ -106,8 +117,8 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
               >
                 清除
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={() => {
                   handleSearch();
                   setShowCalendar(false);
@@ -118,11 +129,11 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
             </div>
           </PopoverContent>
         </Popover>
-        
+
         <Button variant="ghost" onClick={clearFilters}>
           清除筛选
         </Button>
       </div>
     </div>
   );
-} 
+}

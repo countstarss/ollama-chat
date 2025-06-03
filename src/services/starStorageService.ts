@@ -20,6 +20,8 @@ export interface StarredMessage extends Omit<DisplayMessage, "role"> {
   starredAt: Date;
   title: string;
   chatId?: string;
+  libraryId?: string;
+  messageId?: string; // 添加消息ID字段，用于定位具体消息
   isCollection?: boolean;
   collectionMessages?: DisplayMessage[];
 }
@@ -28,7 +30,7 @@ export interface StarredMessage extends Omit<DisplayMessage, "role"> {
 const DB_NAME = "ollama-chat-starred-messages";
 const DB_VERSION = 1;
 
-// 获取数据库连接
+// MARK: 获取数据库连接
 async function getDB(): Promise<IDBPDatabase<StarredMessagesDB>> {
   return openDB<StarredMessagesDB>(DB_NAME, DB_VERSION, {
     upgrade(db) {
@@ -39,7 +41,7 @@ async function getDB(): Promise<IDBPDatabase<StarredMessagesDB>> {
   });
 }
 
-// 数据库操作服务
+// MARK: 数据库操作服务
 const starStorageService = {
   // 添加或更新收藏消息
   async saveStarredMessage(message: DisplayMessage): Promise<StarredMessage> {
@@ -50,17 +52,27 @@ const starStorageService = {
       ...message,
       starredAt: new Date(),
       title: message.summary || "未命名",
+      messageId: message.id, // 保存原始消息ID
+      libraryId: message.libraryId, // 直接使用原始的 libraryId
     };
+
+    console.log("[收藏消息] 保存消息:", {
+      id: starredMessage.id,
+      libraryId: starredMessage.libraryId,
+      originalLibraryId: message.libraryId,
+    });
 
     await db.put("starredMessages", starredMessage);
     return starredMessage;
   },
 
-  // 创建收藏集合（包含多条消息）
+  // MARK: 创建收藏集合
+  // NOTE:（包含多条消息）
   async saveCollectionMessage(
     messages: DisplayMessage[],
     collectionName: string,
-    chatId?: string
+    chatId?: string,
+    libraryId?: string // 添加libraryId参数
   ): Promise<StarredMessage> {
     const db = await getDB();
 
@@ -87,33 +99,40 @@ const starStorageService = {
       starredAt: new Date(),
       title: collectionName,
       chatId: chatId, // 保存会话ID，便于导航
+      libraryId: libraryId, // 直接使用原始的 libraryId
       isCollection: true, // 标记为集合
       collectionMessages: messages, // 保存原始消息
     };
+
+    console.log("[收藏集合] 保存消息:", {
+      id: collectionMessage.id,
+      libraryId: collectionMessage.libraryId,
+      originalLibraryId: libraryId,
+    });
 
     await db.put("starredMessages", collectionMessage);
     return collectionMessage;
   },
 
-  // 获取所有收藏消息
+  // MARK: 获取所有收藏消息
   async getAllStarredMessages(): Promise<StarredMessage[]> {
     const db = await getDB();
     return db.getAllFromIndex("starredMessages", "by-date");
   },
 
-  // 根据 ID 获取收藏消息
+  // MARK: 根据 ID 获取收藏消息
   async getStarredMessage(id: string): Promise<StarredMessage | undefined> {
     const db = await getDB();
     return db.get("starredMessages", id);
   },
 
-  // 删除收藏消息
+  // MARK: 删除收藏消息
   async removeStarredMessage(id: string): Promise<void> {
     const db = await getDB();
     await db.delete("starredMessages", id);
   },
 
-  // 更新收藏消息标题
+  // MARK: 更新收藏消息标题
   async updateStarredMessageTitle(id: string, title: string): Promise<void> {
     const db = await getDB();
     const message = await db.get("starredMessages", id);
@@ -124,7 +143,7 @@ const starStorageService = {
     }
   },
 
-  // 搜索收藏消息
+  // MARK: 搜索收藏消息
   async searchStarredMessages(query: string): Promise<StarredMessage[]> {
     const allMessages = await this.getAllStarredMessages();
 

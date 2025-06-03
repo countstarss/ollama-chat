@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
-import { useStarStore } from '@/store/useStarStore';
-import { StarredMessage } from '@/services/starStorageService';
-import toastService from '@/services/toastService';
+import React, { useState, useCallback, useEffect } from "react";
+import { format } from "date-fns";
+import { zhCN } from "date-fns/locale";
+import { useStarStore } from "@/store/useStarStore";
+import { StarredMessage } from "@/services/starStorageService";
+import toastService from "@/services/toastService";
 
 // 组件导入
-import { SearchFilter } from './SearchFilter';
-import { StarredMessageDialog } from './StarredMessageDialog';
-import { ArrowLeft, Star } from 'lucide-react';
-import { StarredMessageCard } from '@/components/ui/star/StarredMessageCard';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { SkeletonCard } from '@/components/ui/skeleton/SkeletonCard';
+import { SearchFilter } from "./SearchFilter";
+import { StarredMessageDialog } from "./StarredMessageDialog";
+import { ArrowLeft, Star } from "lucide-react";
+import { StarredMessageCard } from "@/components/ui/star/StarredMessageCard";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { SkeletonCard } from "@/components/ui/skeleton/SkeletonCard";
 
 // 骨架屏组件，用于加载状态
 const SkeletonGrid = () => {
@@ -29,33 +29,35 @@ const SkeletonGrid = () => {
 
 export function StarredMessages() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState<StarredMessage | null>(null);
+  const [currentMessage, setCurrentMessage] = useState<StarredMessage | null>(
+    null
+  );
   const [isFiltered, setIsFiltered] = useState(false);
   // 添加一个滞后计数器，用于延迟显示加载状态，避免闪烁
   const [loadingDelay, setLoadingDelay] = useState(0);
   const router = useRouter();
-  
+
   // 使用Zustand store
-  const { 
-    starredMessages, 
-    isLoading, 
-    removeStar, 
-    searchStarredMessages, 
+  const {
+    starredMessages,
+    isLoading,
+    removeStar,
+    searchStarredMessages,
     refreshStarredMessages,
-    init
+    init,
   } = useStarStore();
 
   // 初始化时确保数据已加载
   useEffect(() => {
     // 执行初始化，这将使用缓存数据（如果有）
     init();
-    
+
     // 如果正在加载，设置一个延迟计时器
     if (isLoading) {
       const timer = setTimeout(() => {
-        setLoadingDelay(prev => prev + 1);
+        setLoadingDelay((prev) => prev + 1);
       }, 300); // 300ms延迟，避免短暂加载闪烁
-      
+
       return () => clearTimeout(timer);
     } else {
       // 重置延迟计数器
@@ -63,29 +65,35 @@ export function StarredMessages() {
     }
   }, [init, isLoading]);
 
-  // 处理搜索
-  const handleSearch = useCallback(async (query: string, dateRange: { from?: Date; to?: Date }) => {
-    try {
-      // 使用新的搜索方法，暂时只支持文本搜索，日期范围需要在前端过滤
-      await searchStarredMessages(query);
-      
-      // 设置过滤状态
-      setIsFiltered(!!query || !!dateRange.from || !!dateRange.to);
-    } catch (error) {
-      console.error('搜索收藏失败:', error);
-      toastService.error('搜索失败');
-    }
-  }, [searchStarredMessages]);
+  // MARK: 处理搜索
+  const handleSearch = useCallback(
+    async (query: string, dateRange: { from?: Date; to?: Date }) => {
+      try {
+        // 使用新的搜索方法，暂时只支持文本搜索，日期范围需要在前端过滤
+        await searchStarredMessages(query);
 
-  // 处理删除
-  const handleDelete = useCallback(async (id: string) => {
-    await removeStar(id);
-    // 如果当前打开的模态框正在显示将被删除的消息，则关闭模态框
-    if (currentMessage && currentMessage.id === id) {
-      setIsModalOpen(false);
-      setCurrentMessage(null);
-    }
-  }, [removeStar, currentMessage]);
+        // 设置过滤状态
+        setIsFiltered(!!query || !!dateRange.from || !!dateRange.to);
+      } catch (error) {
+        console.error("搜索收藏失败:", error);
+        toastService.error("搜索失败");
+      }
+    },
+    [searchStarredMessages]
+  );
+
+  // MARK: 处理删除
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await removeStar(id);
+      // 如果当前打开的模态框正在显示将被删除的消息，则关闭模态框
+      if (currentMessage && currentMessage.id === id) {
+        setIsModalOpen(false);
+        setCurrentMessage(null);
+      }
+    },
+    [removeStar, currentMessage]
+  );
 
   // 打开模态框查看完整内容
   const openModal = useCallback((message: StarredMessage) => {
@@ -93,70 +101,96 @@ export function StarredMessages() {
     setIsModalOpen(true);
   }, []);
 
-  // 清除筛选
+  // MARK: 清除筛选
   const clearFilters = useCallback(() => {
     setIsFiltered(false);
     refreshStarredMessages();
   }, [refreshStarredMessages]);
-  
-  // 格式化时间 (带时间)
+
+  // MARK: 格式化时间
   const formatFullTime = useCallback((date: Date) => {
     try {
-      return format(date, 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN });
+      return format(date, "yyyy年MM月dd日 HH:mm:ss", { locale: zhCN });
     } catch {
-      return '未知时间';
+      return "未知时间";
     }
   }, []);
 
-  // 处理导航到原始聊天
-  const handleNavigateToChat = useCallback((message: StarredMessage) => {
-    // 判断是否为集合类型
-    const isCollection = message.isCollection || message.role === 'collection';
-    
-    if (isCollection && message.collectionMessages && message.collectionMessages.length > 0) {
-      // 取集合中的第一条消息
-      const firstMessage = message.collectionMessages[0];
-      
-      // 如果第一条消息有chatId，则导航到该消息
-      if (firstMessage.chatId) {
-        router.push(`/?chatId=${firstMessage.chatId}&messageId=${firstMessage.id}`);
+  // MARK: 导航到原始聊天
+  const handleNavigateToChat = useCallback(
+    (message: StarredMessage) => {
+      // 如果来自 RAG 知识库，跳转到 library 页面并定位到具体消息
+      if (message.libraryId) {
+        router.push(
+          `/library?libraryId=${message.libraryId}${
+            message.messageId ? `&messageId=${message.messageId}` : ""
+          }`
+        );
         return;
       }
-    }
-    
-    // 非集合消息或集合没有子消息，使用当前消息的chatId
-    if (!message.chatId) {
-      toastService.error('无法找到原始聊天');
-      return;
-    }
-    
-    // 使用chatId导航，并添加messageId参数以便定位到特定消息
-    router.push(`/?chatId=${message.chatId}&messageId=${message.id}`);
-  }, [router]);
 
-  // 决定显示什么内容
+      // 判断是否为集合类型
+      const isCollection =
+        message.isCollection || message.role === "collection";
+
+      if (
+        isCollection &&
+        message.collectionMessages &&
+        message.collectionMessages.length > 0
+      ) {
+        // 取集合中的第一条消息
+        const firstMessage = message.collectionMessages[0];
+
+        // 如果第一条消息有chatId，则导航到该消息
+        if (firstMessage.chatId) {
+          router.push(
+            `/?chatId=${firstMessage.chatId}&messageId=${firstMessage.id}`
+          );
+          return;
+        }
+      }
+
+      // 非集合消息或集合没有子消息，使用当前消息的chatId
+      if (!message.chatId) {
+        toastService.error("无法找到原始聊天");
+        return;
+      }
+
+      // 使用chatId导航，并添加messageId参数以便定位到特定消息
+      router.push(
+        `/?chatId=${message.chatId}&messageId=${
+          message.messageId || message.id
+        }`
+      );
+    },
+    [router]
+  );
+
+  // MARK: renderContent
   const renderContent = () => {
     // 如果正在加载并且延迟计数器大于0（超过300ms仍在加载）
     if (isLoading && loadingDelay > 0) {
       return <SkeletonGrid />;
     }
-    
+
     // 如果没有收藏内容
     if (starredMessages.length === 0) {
       return (
         <div className="text-center py-16 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <Star className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <h3 className="text-xl font-medium text-gray-500 dark:text-gray-400">暂无收藏内容</h3>
+          <h3 className="text-xl font-medium text-gray-500 dark:text-gray-400">
+            暂无收藏内容
+          </h3>
           <p className="text-gray-400 dark:text-gray-500 mt-2">
             {isFiltered
-              ? '没有符合条件的收藏，请尝试其他搜索条件'
-              : '在聊天中使用收藏按钮来保存重要内容'}
+              ? "没有符合条件的收藏，请尝试其他搜索条件"
+              : "在聊天中使用收藏按钮来保存重要内容"}
           </p>
         </div>
       );
     }
-    
-    // 正常显示收藏内容
+
+    // MARK: 收藏内容
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-200px)] scrollbar-hide pb-24">
         {starredMessages.map((message) => (
@@ -185,11 +219,8 @@ export function StarredMessages() {
           </h1>
         </div>
       </div>
-      
-      <SearchFilter 
-        onSearch={handleSearch}
-        onClearFilters={clearFilters}
-      />
+
+      <SearchFilter onSearch={handleSearch} onClearFilters={clearFilters} />
 
       {renderContent()}
 
@@ -202,4 +233,4 @@ export function StarredMessages() {
       />
     </div>
   );
-} 
+}
