@@ -74,13 +74,7 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
     prepareRequestBody,
     addAssistantPlaceholder,
     createAbortController,
-  } = useChatActions(
-    chatWindowRef,
-    messages,
-    setMessages,
-    setIsLoading,
-    setModelError
-  );
+  } = useChatActions(chatWindowRef, messages, setMessages, setIsLoading);
 
   // MARK: 侧边栏
   const { isFloatingSidebarVisible, toggleFloatingSidebar } =

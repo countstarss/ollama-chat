@@ -10,8 +10,7 @@ export function useChatActions(
   chatWindowRef: RefObject<ChatWindowHandle | null>,
   messages: DisplayMessage[],
   setMessages: React.Dispatch<React.SetStateAction<DisplayMessage[]>>,
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  setModelError: React.Dispatch<React.SetStateAction<string | null>>
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
@@ -37,7 +36,7 @@ export function useChatActions(
     [setMessages]
   );
 
-  // 添加新消息的工具函数
+  // MARK: 添加新消息
   const addMessage = useCallback(
     (message: Omit<DisplayMessage, "id">) => {
       setMessages((prev) => [...prev, { ...message, id: uuidv4() }]);
@@ -45,7 +44,7 @@ export function useChatActions(
     [setMessages]
   );
 
-  // 中断当前请求
+  // MARK: 中断当前请求
   const handleAbort = useCallback(() => {
     if (abortController) {
       console.log("aborting request...");
@@ -62,7 +61,7 @@ export function useChatActions(
     }
   }, [abortController, updateLastMessage, setIsLoading]);
 
-  // 滚动到底部
+  // MARK: 滚动到底部
   const scrollToBottom = useCallback(
     (delay = 100) => {
       setTimeout(() => chatWindowRef.current?.scrollToBottom?.(), delay);
@@ -70,7 +69,7 @@ export function useChatActions(
     [chatWindowRef]
   );
 
-  // 准备请求体
+  // MARK: 准备请求体
   const prepareRequestBody = useCallback(
     (
       userInput: string,
@@ -117,7 +116,7 @@ export function useChatActions(
     []
   );
 
-  // 添加助手占位消息
+  // MARK: 添加助手占位消息
   const addAssistantPlaceholder = useCallback(() => {
     const assistantMessageId = uuidv4();
     setMessages((prev) => [
@@ -136,7 +135,7 @@ export function useChatActions(
     scrollToBottom();
   }, [setMessages, scrollToBottom]);
 
-  // 创建新的AbortController
+  // MARK: 创建新的AbortController
   const createAbortController = useCallback(() => {
     const controller = new AbortController();
     setAbortController(controller);

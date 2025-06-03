@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vectorStore } from "@/lib/vectorStore";
-import { Ollama } from "ollama";
+import { OllamaStream } from "@/lib/ollamaClient";
+import { v4 as uuidv4 } from "uuid";
+import { ChatMessage } from "@/lib/types";
 
-// 初始化 Ollama 客户端
-const ollama = new Ollama({
-  host: "http://localhost:11434",
-});
+// 统一模型名称
+const MODEL_NAME = "deepseek-r1:7b";
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,31 +50,49 @@ ${contextBlock}
 
 请根据上述资料给出准确、详细的回答：`;
 
-    // ④ 调用 Ollama 生成回答
-    console.log("🤖 生成回答...");
-    const response = await ollama.generate({
-      model: "deepseek-r1:7b", // 使用您系统中可用的模型
-      prompt,
-      stream: false,
+    // ④ 生成流式回答
+    console.log("🤖 生成RAG流式回答...");
+    const chatMessages: ChatMessage[] = [
+      { id: uuidv4(), role: "user", content: prompt },
+    ];
+    const rawStream = await OllamaStream(
+      chatMessages,
+      MODEL_NAME,
+      "general_chat"
+    );
+
+    // ⑤ 构造新的 ReadableStream：首条 data 带 sources，其余透传
+    const encoder = new TextEncoder();
+    const sourcePayload = {
+      sources: contexts.map((c) => ({
+        fileName: c.metadata?.fileName || "unknown",
+        chunkIndex: c.metadata?.chunkIndex || 0,
+        score: c.score,
+        content: c.pageContent.substring(0, 200) + "...",
+      })),
+    };
+
+    const combinedStream = new ReadableStream({
+      async start(controller) {
+        // 先推送sources
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify(sourcePayload)}\n\n`)
+        );
+        const reader = rawStream.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+        controller.close();
+      },
     });
 
-    // ⑤ 格式化响应
-    const sources = contexts.map((c) => ({
-      fileName: c.metadata?.fileName || "unknown",
-      chunkIndex: c.metadata?.chunkIndex || 0,
-      score: c.score,
-      content: c.pageContent.substring(0, 200) + "...",
-    }));
-    console.log(response.response);
-
-    console.log("✅ 回答生成完成");
-
-    return NextResponse.json({
-      answer: response.response,
-      sources,
-      query,
-      libraryId: libraryId || null,
-      timestamp: new Date().toISOString(),
+    return new Response(combinedStream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
     });
   } catch (error) {
     console.error("❌ RAG API 错误:", error);

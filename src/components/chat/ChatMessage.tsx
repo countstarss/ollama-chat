@@ -318,7 +318,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                           {source.fileName} (块 {source.chunkIndex})
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          相似度: {(source.score * 100).toFixed(1)}%
+                          相似度: {(source.score / 10).toFixed(1)}%
                         </span>
                       </div>
                       <p className="text-gray-600 dark:text-gray-400">
