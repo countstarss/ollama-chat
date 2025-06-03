@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { KnowledgeLibrary } from "@/types/knowledge";
+import { DisplayMessage } from "@/components/chat/ChatMessage";
 import { v4 as uuidv4 } from "uuid";
 import {
   getAllLibraries,
@@ -13,6 +14,7 @@ interface LibraryState {
   createLibrary: (name?: string) => Promise<string>;
   renameLibrary: (id: string, name: string) => Promise<void>;
   removeLibrary: (id: string) => Promise<void>;
+  appendMessages: (id: string, newMsgs: DisplayMessage[]) => Promise<void>;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -21,7 +23,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   // 加载所有知识库
   loadAll: async () => {
     const libs = await getAllLibraries();
-    set({ libraries: libs });
+    // 兼容旧数据：确保messages字段存在
+    const normalized = libs.map((l) => ({ ...l, messages: l.messages || [] }));
+    set({ libraries: normalized });
   },
 
   // 创建知识库
@@ -30,6 +34,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       id: uuidv4(),
       name,
       createdAt: Date.now(),
+      messages: [],
     };
     await saveLibrary(lib);
     set((state) => ({ libraries: [...state.libraries, lib] }));
@@ -53,6 +58,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     await deleteLibrary(id);
     set((state) => ({
       libraries: state.libraries.filter((l) => l.id !== id),
+    }));
+  },
+
+  // 追加对话消息
+  appendMessages: async (id, newMsgs) => {
+    if (!newMsgs || newMsgs.length === 0) return;
+    const libs = get().libraries;
+    const idx = libs.findIndex((l) => l.id === id);
+    if (idx === -1) return;
+
+    const existing = libs[idx].messages || [];
+    const updated: KnowledgeLibrary = {
+      ...libs[idx],
+      messages: [...existing, ...newMsgs],
+    };
+
+    await saveLibrary(updated);
+    set((state) => ({
+      libraries: state.libraries.map((l) => (l.id === id ? updated : l)),
     }));
   },
 }));

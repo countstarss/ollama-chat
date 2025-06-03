@@ -268,7 +268,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
       return activeMessageId ? isMessageMarked(activeMessageId) : false;
     };
 
-    // 获取导航状态
+    // MARK: 获取导航状态
     const currentMessageIndex = activeMessageId
       ? messages.findIndex((m) => m.id === activeMessageId)
       : -1;
@@ -276,7 +276,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
     const hasNextMessage =
       currentMessageIndex >= 0 && currentMessageIndex < messages.length - 1;
 
-    // 导航到上一条消息
+    // MARK: 上一条消息
     const goToPreviousMessage = () => {
       if (!hasPreviousMessage) return;
 
@@ -284,7 +284,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
       scrollToMessage(prevMessageId);
     };
 
-    // 导航到下一条消息
+    // MARK: 下一条消息
     const goToNextMessage = () => {
       if (!hasNextMessage) return;
 
@@ -292,7 +292,7 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
       scrollToMessage(nextMessageId);
     };
 
-    // 滚动到指定消息
+    // MARK: 滚动到指定消息
     const scrollToMessage = (messageId: string) => {
       const messageElement = document.getElementById(`message-${messageId}`);
       if (messageElement) {
@@ -307,10 +307,6 @@ export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(
           clearTimeout(manualActivationTimeoutRef.current);
           manualActivationTimeoutRef.current = null;
         }
-
-        // 不再自动恢复视口检测，只有当用户滚动时才恢复
-        // 用户滚动会触发监听滚动事件中的处理函数，将isManuallyActivated设为false
-        // 这样手动激活状态会一直保持，直到用户主动滚动
       }
     };
 

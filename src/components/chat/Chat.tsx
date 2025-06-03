@@ -15,17 +15,19 @@ import {
   PanelRightClose,
   PanelLeftClose,
   PanelLeft,
+  MessageSquare,
+  BookOpen,
 } from "lucide-react";
 import { useSidebar } from "@/components/context/sidebar-context";
 import { Button } from "@/components/ui/button";
 import { EditableChatTitle } from "@/components/ui/EditableChatTitle";
-import { v4 as uuidv4 } from "uuid";
 import toastService from "@/services/toastService";
 import { useFloatingSidebar } from "@/components/context/floating-sidebar-context";
 import { SelectionModeToggle } from "./SelectionModeToggle";
 import { useSearchParams } from "next/navigation";
 import { useRagMessage } from "@/hooks/useRagMessage";
 import { useLibrarySession } from "@/hooks/useLibrarySession";
+import { useChatMessage } from "@/hooks/useChatMessage";
 
 interface ChatProps {
   mode?: "chat" | "rag";
@@ -88,12 +90,16 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
   const { libraries, renameLibrary } = useLibrarySession();
   const [libraryName, setLibraryName] = useState<string>("未命名知识库");
 
-  // 监听libraryId或libraries变化，同步当前库名称
+  // NOTE: 监听libraryId或libraries变化，同步当前库名称
   useEffect(() => {
     if (mode === "rag" && libraryId) {
       const lib = libraries.find((l) => l.id === libraryId);
       if (lib) {
         setLibraryName(lib.name || "未命名知识库");
+        // 同步历史消息
+        if (Array.isArray(lib.messages)) {
+          setMessages(lib.messages);
+        }
       }
     }
   }, [mode, libraryId, libraries]);
@@ -119,24 +125,6 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
   }, [getSelectedModel]);
 
   // ========== 滚动控制逻辑 ==========
-  /**
-   * 聊天滚动控制机制
-   *
-   * 滚动优先级:
-   * 1. URL参数中的messageId (最高优先级) - 滚动到指定消息并高亮
-   * 2. 默认滚动行为 - 滚动到最新消息
-   *
-   * 滚动触发点:
-   * - 聊天记录加载完成后
-   * - messageToScrollTo状态变化时
-   * - 消息响应完成后
-   *
-   * 特殊处理:
-   * - 当URL中包含messageId时，消息响应完成后不会自动滚动到底部
-   * - 用户可以通过界面右下角的滚动按钮手动滚动到最新消息
-   */
-
-  // MARK: 1. 加载聊天记录后的滚动处理
   useEffect(() => {
     const loadMessages = async () => {
       if (currentChatId) {
@@ -293,7 +281,7 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
     [currentChatId, saveCurrentChat, selectedModel]
   );
 
-  // 使用封装的RAG hook
+  // MARK: RAG hook
   const { handleRagMessage } = useRagMessage({
     messages,
     setMessages,
@@ -305,153 +293,33 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
     libraryId,
   });
 
-  // MARK: 处理发送消息 - 根据模式选择不同处理逻辑
+  // MARK: 普通聊天hook
+  const { handleChatMessage } = useChatMessage({
+    messages,
+    setMessages,
+    setIsLoading,
+    setModelError,
+    selectedModel,
+    modelSettings,
+    sendStreamRequest,
+    prepareRequestBody,
+    addAssistantPlaceholder,
+    createAbortController,
+    updateLastMessage,
+    scrollToBottom,
+    searchParams,
+    saveCurrentChat,
+    isStreamCompletedRef,
+  });
+
+  // MARK: 处理发送消息
+  // NOTE: 根据模式分流
   const handleSendMessage = useCallback(
-    async (userInput: string) => {
-      if (mode === "rag") {
-        return handleRagMessage(userInput);
-      }
-
-      // 原始的聊天逻辑
-      // 清除任何之前的错误
-      setModelError(null);
-
-      // 输出当前使用的模型信息
-      console.log(
-        `[发送消息] 当前使用模型: ${
-          selectedModel
-            ? `${selectedModel.name} (${selectedModel.modelId})`
-            : "未选择模型"
-        }`
-      );
-
-      // 添加用户消息
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: uuidv4(),
-          role: "user",
-          content: userInput,
-        },
-      ]);
-
-      setIsLoading(true);
-      // 标记流式响应开始
-      isStreamCompletedRef.current = false;
-
-      // 创建新的AbortController
-      const controller = createAbortController();
-      // 检查是否有选中的模型
-      if (!selectedModel) {
-        setModelError("未选择模型");
-        setIsLoading(false);
-        setIsModelReady(false);
-        return;
-      }
-      console.log(
-        `[请求API] 模型信息: ${selectedModel.name} (${selectedModel.modelId})`
-      );
-
-      // MARK: 准备请求体
-      const requestBody = prepareRequestBody(
-        userInput,
-        messages,
-        selectedModel,
-        modelSettings
-      );
-
-      // 添加助手占位消息
-      addAssistantPlaceholder();
-
-      try {
-        // 使用流式响应hook处理请求
-        const success = await sendStreamRequest(
-          requestBody,
-          (updates) => updateLastMessage(() => updates),
-          controller
-        );
-
-        if (!success) {
-          toastService.error("响应生成失败，请重试");
-        }
-
-        // MARK: 滚动处理
-        // 滚动优先级：特定消息ID > 默认滚动到底部
-        const messageId = searchParams.get("messageId");
-        if (!messageId) {
-          scrollToBottom();
-        }
-
-        // 标记流式响应完成，并保存当前聊天
-        isStreamCompletedRef.current = true;
-        saveCurrentChat(messages, selectedModel || undefined);
-      } catch (error) {
-        console.error("消息发送错误:", error);
-
-        // 处理模型特定错误
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-
-        // 检查是否是模型相关错误
-        const isModelError =
-          errorMessage.includes("模型") ||
-          errorMessage.includes("model") ||
-          errorMessage.includes("找不到") ||
-          errorMessage.includes("not found");
-
-        if (isModelError) {
-          // 设置模型错误状态，用于UI显示
-          setModelError(
-            `模型 "${selectedModel.modelId}" 可能不可用。错误: ${errorMessage}`
-          );
-          setIsModelReady(false);
-
-          // 向聊天添加错误消息
-          updateLastMessage(() => ({
-            role: "error",
-            content: "",
-            mainContent: `模型错误: ${errorMessage}\n\n请尝试选择其他模型或检查Ollama服务是否正常运行。`,
-            isThinkingComplete: true,
-          }));
-
-          toastService.error(`模型 "${selectedModel.modelId}" 不可用`, {
-            description: "请尝试选择其他模型或检查服务是否正常运行",
-          });
-        } else {
-          // 处理一般错误
-          updateLastMessage(() => ({
-            role: "error",
-            content: "",
-            mainContent: `发送消息错误: ${errorMessage}`,
-            isThinkingComplete: true,
-          }));
-
-          toastService.error("发送消息失败", {
-            description: errorMessage,
-          });
-        }
-      } finally {
-        isStreamCompletedRef.current = true;
-        setIsLoading(false);
-      }
+    (input: string) => {
+      if (mode === "rag") return handleRagMessage(input);
+      return handleChatMessage(input);
     },
-    [
-      messages,
-      selectedModel,
-      modelSettings,
-      updateLastMessage,
-      sendStreamRequest,
-      prepareRequestBody,
-      addAssistantPlaceholder,
-      createAbortController,
-      scrollToBottom,
-      setModelError,
-      saveCurrentChat,
-      setIsModelReady,
-      searchParams,
-      mode,
-      handleRagMessage,
-    ]
+    [mode, handleChatMessage, handleRagMessage]
   );
 
   // 处理模型选择变更
@@ -496,16 +364,17 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
 
           {mode === "rag" ? (
             <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
               <EditableChatTitle
                 title={libraryName}
                 onRename={handleRenameLibrary}
               />
-              <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-                RAG 知识问答
-              </span>
             </div>
           ) : (
-            <EditableChatTitle title={chatName} onRename={handleRenameChat} />
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              <EditableChatTitle title={chatName} onRename={handleRenameChat} />
+            </div>
           )}
         </div>
 
