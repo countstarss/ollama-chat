@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Calendar, ChevronDown } from "lucide-react";
@@ -9,16 +9,25 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchFilterProps {
   onSearch: (query: string, dateRange: { from?: Date; to?: Date }) => void;
   onClearFilters: () => void;
+  onRealtimeSearch?: (query: string) => void;
 }
 
-export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
+export function SearchFilter({ onSearch, onClearFilters, onRealtimeSearch }: SearchFilterProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [showCalendar, setShowCalendar] = useState(false);
+
+  // 使用防抖处理实时搜索
+  const debouncedSearch = useDebounce((query: string) => {
+    if (onRealtimeSearch) {
+      onRealtimeSearch(query);
+    }
+  }, 300); // 300ms 延迟
 
   // 处理搜索
   const handleSearch = () => {
@@ -30,6 +39,10 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
     setSearchQuery("");
     setDateRange({});
     onClearFilters();
+    // 触发空字符串的实时搜索以显示所有结果
+    if (onRealtimeSearch) {
+      onRealtimeSearch("");
+    }
   };
 
   // 日期范围文本
@@ -58,21 +71,25 @@ export function SearchFilter({ onSearch, onClearFilters }: SearchFilterProps) {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-8">
+    <div className="flex flex-col sm:flex-row gap-4">
       <div className="flex-1 flex gap-2">
-        <Input
-          placeholder="搜索收藏内容..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSearch();
-          }}
-        />
-        <Button onClick={handleSearch}>
-          <Search className="h-4 w-4 mr-2" />
-          搜索
-        </Button>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="搜索收藏内容..."
+            value={searchQuery}
+            onChange={(e) => {
+              const newQuery = e.target.value;
+              setSearchQuery(newQuery);
+              // 触发防抖的实时搜索
+              debouncedSearch(newQuery);
+            }}
+            className="pl-9"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
+          />
+        </div>
       </div>
 
       <div className="flex gap-2">
