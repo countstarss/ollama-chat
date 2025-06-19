@@ -32,9 +32,10 @@ import { useChatMessage } from "@/hooks/useChatMessage";
 interface ChatProps {
   mode?: "chat" | "rag";
   libraryId?: string | null;
+  messageId?: string | null;
 }
 
-export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
+export default function Chat({ mode = "chat", libraryId = null, messageId = null }: ChatProps) {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [modelError, setModelError] = useState<string | null>(null);
@@ -101,10 +102,16 @@ export default function Chat({ mode = "chat", libraryId = null }: ChatProps) {
             libraryId,
             messageCount: messagesWithLibraryId.length,
           });
+          
+          // 如果有messageId参数，设置需要滚动到的消息
+          if (messageId) {
+            console.log(`[Chat] RAG模式检测到messageId参数: ${messageId}`);
+            setMessageToScrollTo(messageId);
+          }
         }
       }
     }
-  }, [mode, libraryId, libraries]);
+  }, [mode, libraryId, libraries, messageId]);
 
   // 处理知识库重命名
   const handleRenameLibrary = useCallback(

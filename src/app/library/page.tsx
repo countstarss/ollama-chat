@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 export default function LibraryPage() {
   const searchParams = useSearchParams();
   const libraryId = searchParams.get("libraryId");
+  const messageId = searchParams.get("messageId");
 
   const { isOpen, pinned, open, close, togglePin } = useUploadPanelStore();
 
@@ -70,7 +71,7 @@ export default function LibraryPage() {
         )}
         style={{ marginLeft: "0px" }}
       >
-        <Chat mode="rag" libraryId={libraryId} />
+        <Chat mode="rag" libraryId={libraryId} messageId={messageId} />
       </div>
     </div>
   );
