@@ -35,7 +35,11 @@ interface ChatProps {
   messageId?: string | null;
 }
 
-export default function Chat({ mode = "chat", libraryId = null, messageId = null }: ChatProps) {
+export default function Chat({
+  mode = "chat",
+  libraryId = null,
+  messageId = null,
+}: ChatProps) {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [modelError, setModelError] = useState<string | null>(null);
@@ -102,7 +106,7 @@ export default function Chat({ mode = "chat", libraryId = null, messageId = null
             libraryId,
             messageCount: messagesWithLibraryId.length,
           });
-          
+
           // 如果有messageId参数，设置需要滚动到的消息
           if (messageId) {
             console.log(`[Chat] RAG模式检测到messageId参数: ${messageId}`);

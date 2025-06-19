@@ -119,29 +119,20 @@ export function StarredMessages() {
   // MARK: 导航到原始聊天
   const handleNavigateToChat = useCallback(
     (message: StarredMessage) => {
-      // 如果来自 RAG 知识库，跳转到 library 页面并定位到具体消息
-      if (message.libraryId) {
-        router.push(
-          `/library?libraryId=${message.libraryId}${
-            message.messageId ? `&messageId=${message.messageId}` : ""
-          }`
-        );
-        return;
-      }
-
-      // 判断是否为集合类型
       const isCollection =
         message.isCollection || message.role === "collection";
+      const firstMessage = isCollection ? message.collectionMessages?.[0] : null;
 
-      if (
-        isCollection &&
-        message.collectionMessages &&
-        message.collectionMessages.length > 0
-      ) {
-        // 取集合中的第一条消息
-        const firstMessage = message.collectionMessages[0];
-
-        // 如果第一条消息有chatId，则导航到该消息
+      // 优先处理集合消息
+      if (isCollection && firstMessage) {
+        // 集合消息优先跳转到知识库
+        if (firstMessage.libraryId) {
+          router.push(
+            `/library?libraryId=${firstMessage.libraryId}&messageId=${firstMessage.id}`
+          );
+          return;
+        }
+        // 否则跳转到普通聊天
         if (firstMessage.chatId) {
           router.push(
             `/?chatId=${firstMessage.chatId}&messageId=${firstMessage.id}`
@@ -150,17 +141,21 @@ export function StarredMessages() {
         }
       }
 
-      // 非集合消息或集合没有子消息，使用当前消息的chatId
+      // 处理知识库消息
+      if (message.libraryId) {
+        const messageIdParam = message.messageId ? `&messageId=${message.messageId}` : "";
+        router.push(`/library?libraryId=${message.libraryId}${messageIdParam}`);
+        return;
+      }
+
+      // 处理普通聊天消息
       if (!message.chatId) {
         toastService.error("无法找到原始聊天");
         return;
       }
 
-      // 使用chatId导航，并添加messageId参数以便定位到特定消息
       router.push(
-        `/?chatId=${message.chatId}&messageId=${
-          message.messageId || message.id
-        }`
+        `/?chatId=${message.chatId}&messageId=${message.messageId || message.id}`
       );
     },
     [router]
