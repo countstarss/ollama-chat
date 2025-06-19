@@ -132,8 +132,13 @@ export default function Chat({
     const model = getSelectedModel();
     if (model) {
       setSelectedModel(model);
-      setIsModelReady(true);
+      // 不立即设置为ready，等待ModelSelectorContainer的测试结果
+      setIsModelReady(false);
       console.log(`[初始化] 当前选中模型: ${model.name} (${model.modelId})`);
+    } else {
+      console.log("[初始化] 没有可用的模型");
+      setSelectedModel(null);
+      setIsModelReady(false);
     }
   }, [getSelectedModel]);
 
@@ -341,22 +346,29 @@ export default function Chat({
   const handleModelChange = useCallback((modelId: string) => {
     // 先将就绪状态设为false，直到确认模型可用
     setIsModelReady(false);
-
-    // 创建一个临时的模型配置对象
-    const tempModel: ModelConfig = {
-      id: `temp-${Date.now()}`,
-      name: modelId, // 使用modelId作为显示名称
-      modelId: modelId, // 直接使用传入的modelId
-      description: `直接指定的模型 ${modelId}`,
-    };
-
-    setSelectedModel(tempModel);
-    setModelError(null);
-
-    // 模拟等待一段时间后模型就绪
-    setTimeout(() => {
-      setIsModelReady(true);
-    }, 500);
+    
+    // 从模型配置中获取完整的模型信息
+    const { models } = useModelConfig();
+    const selectedModelConfig = models.find(m => m.modelId === modelId);
+    
+    if (selectedModelConfig) {
+      setSelectedModel(selectedModelConfig);
+      setModelError(null);
+      console.log(`[Chat] 选择模型: ${selectedModelConfig.name} (${selectedModelConfig.modelId})`);
+    } else {
+      // 如果找不到配置，创建一个临时的模型配置对象
+      const tempModel: ModelConfig = {
+        id: `temp-${Date.now()}`,
+        name: modelId,
+        modelId: modelId,
+        description: `模型 ${modelId}`,
+      };
+      setSelectedModel(tempModel);
+      setModelError(null);
+      console.log(`[Chat] 使用临时模型配置: ${modelId}`);
+    }
+    
+    // ModelSelectorContainer会进行模型测试并更新就绪状态
   }, []);
 
   return (

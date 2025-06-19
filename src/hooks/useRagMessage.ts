@@ -58,14 +58,17 @@ export function useRagMessage({
       setIsLoading(true);
 
       try {
+        const controller = new AbortController();
         const response = await fetch("/api/rag", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: userInput, libraryId }),
+          signal: controller.signal,
         });
 
         if (!response.ok || !response.body) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
         }
 
         const reader = response.body.getReader();

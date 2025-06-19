@@ -17,30 +17,11 @@ export interface ModelConfig {
 // 本地存储键名
 const LOCAL_STORAGE_KEY = "ollama-chat-models";
 
-// MARK: 默认模型列表
-const DEFAULT_MODELS: ModelConfig[] = [
-  {
-    id: "default-deepseek",
-    name: "DeepSeek 7B",
-    modelId: "deepseek-r1:7b",
-    description: "默认的DeepSeek 7B模型",
-    isApiModel: false,
-  },
-  {
-    id: "mistral",
-    name: "Mistral-7B",
-    modelId: "mistral",
-    description: "默认的Mistral-7B模型",
-    isApiModel: false,
-  },
-];
-
 export function useModelConfig() {
-  // 存储模型列表
-  const [models, setModels] = useState<ModelConfig[]>(DEFAULT_MODELS);
-  // 当前选中的模型
-  const [selectedModelId, setSelectedModelId] =
-    useState<string>("default-deepseek");
+  // 存储模型列表 - 初始化为空数组而不是undefined
+  const [models, setModels] = useState<ModelConfig[]>([]);
+  // 当前选中的模型 - 初始化为空字符串，等待从localStorage加载
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
 
   // 立即保存到localStorage的工具函数
   const saveToLocalStorage = useCallback(
@@ -70,19 +51,35 @@ export function useModelConfig() {
     const loadModels = () => {
       try {
         const savedModels = localStorage.getItem(LOCAL_STORAGE_KEY);
-        console.log(`[加载模型配置] 本地存储中的模型配置: ${savedModels}`);
+        console.log(`[加载模型配置] 本地存储中的模型配置:`, savedModels);
+        
         if (savedModels) {
           const parsedData = JSON.parse(savedModels);
-          if (Array.isArray(parsedData.models)) {
+          
+          // 如果有保存的模型列表，使用它
+          if (Array.isArray(parsedData.models) && parsedData.models.length > 0) {
+            console.log(`[加载模型配置] 加载了 ${parsedData.models.length} 个模型`);
             setModels(parsedData.models);
+            
+            // 如果有选中的ID，使用它
+            if (parsedData.selectedId) {
+              setSelectedModelId(parsedData.selectedId);
+            } else if (parsedData.models.length > 0) {
+              // 如果没有选中的ID，选择第一个模型
+              setSelectedModelId(parsedData.models[0].id);
+            }
+          } else {
+            console.log("[加载模型配置] 没有保存的模型，保持空列表");
+            // 不设置默认模型，保持空列表
           }
-          if (parsedData.selectedId) {
-            setSelectedModelId(parsedData.selectedId);
-          }
+        } else {
+          console.log("[加载模型配置] localStorage中没有数据");
+          // 不设置默认模型，保持空列表
         }
       } catch (error) {
         console.error("加载模型配置失败:", error);
         toastService.error("加载模型配置失败");
+        // 出错时也不设置默认模型
       }
     };
 
@@ -105,11 +102,22 @@ export function useModelConfig() {
         id: `model-${Date.now()}`,
       };
 
+      console.log("[ModelConfig] 添加新模型:", newModel);
       const updatedModels = [...models, newModel];
       setModels(updatedModels);
 
       // 立即保存到localStorage
+      console.log(
+        "[ModelConfig] 保存到localStorage，模型数量:",
+        updatedModels.length
+      );
       saveToLocalStorage(updatedModels, selectedModelId);
+
+      // 验证保存结果
+      setTimeout(() => {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        console.log("[ModelConfig] 验证localStorage内容:", saved);
+      }, 100);
 
       toastService.success(`已添加模型 ${model.name}`);
       return newModel.id;
@@ -175,7 +183,10 @@ export function useModelConfig() {
 
   // MARK: 获取当前选中的模型
   const getSelectedModel = useCallback(() => {
-    return models.find((model) => model.id === selectedModelId) || models[0];
+    if (models.length === 0) {
+      return null; // 如果没有模型，返回null
+    }
+    return models.find((model) => model.id === selectedModelId) || null;
   }, [models, selectedModelId]);
 
   // 手动触发保存到localStorage
