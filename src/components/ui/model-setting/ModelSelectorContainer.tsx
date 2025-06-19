@@ -33,7 +33,13 @@ export function ModelSelectorContainer({
   const [isModelReady, setIsModelReady] = useState(false);
 
   // 使用模型配置hook
-  const { getSelectedModel, models, selectModel } = useModelConfig();
+  const {
+    getSelectedModel,
+    models,
+    selectModel,
+    updateModelValidation,
+    shouldRevalidateModel,
+  } = useModelConfig();
 
   // 使用模型测试hook
   const { testModel, isTestingModel } = useModelTest();
@@ -51,29 +57,46 @@ export function ModelSelectorContainer({
     }
   }, [externalModelReady, isTestingModel]);
 
+  // 用于跟踪是否应该显示toast的标志
+  const [shouldShowToast, setShouldShowToast] = useState(true);
+  
+  // 清理effect
+  useEffect(() => {
+    return () => {
+      // 组件卸载时重置状态
+      setShouldShowToast(true);
+    };
+  }, []);
+
   // 测试选中的模型
   const testSelectedModel = useCallback(
-    async (model: any) => {
+    async (model: any, showToast: boolean = true) => {
       setIsModelReady(false);
       setModelError(null);
 
-      toastService.info(`正在测试模型 ${model.name}...`);
-
       const result = await testModel(model);
+
+      // 更新模型验证状态
+      updateModelValidation(model.id, result.isValid);
 
       if (result.isValid) {
         setIsModelReady(true);
-        toastService.success(
-          `模型 ${model.name} 测试成功！${
-            result.responseTime ? ` (${result.responseTime}ms)` : ""
-          }`
-        );
+        // 只在需要时显示成功toast
+        if (showToast && shouldShowToast) {
+          toastService.success("模型已就绪", { 
+            duration: 1500 // 1.5秒后自动消失
+          });
+        }
       } else {
         setModelError(result.error || `模型 ${model.name} 测试失败`);
-        toastService.error(result.error || `模型 ${model.name} 测试失败`);
+        // 错误信息始终显示，但时间更短
+        toastService.error("模型测试失败", {
+          duration: 2500, // 2.5秒后自动消失
+          description: result.error
+        });
       }
     },
-    [testModel]
+    [testModel, updateModelValidation, shouldShowToast]
   );
 
   // 初始化当前模型
@@ -81,13 +104,26 @@ export function ModelSelectorContainer({
     const model = getSelectedModel();
     if (model) {
       setSelectedModelId(model.id);
-      // 初始化时不自动设置为ready，需要测试后才能确认
+
+      // 检查模型是否已验证且不需要重新验证
+      if (model.isValidated && !shouldRevalidateModel(model)) {
+        console.log(`[ModelSelector] 模型 ${model.name} 已验证，跳过测试`);
+        setIsModelReady(true);
+        setModelError(null);
+        return;
+      }
+
+      // 需要测试的情况
       setIsModelReady(false);
+
       // 自动测试当前选中的模型（跳过未配置的API模型）
       if (!model.isApiModel || (model.isApiModel && model.apiKey)) {
-        testSelectedModel(model);
+        console.log(`[ModelSelector] 需要验证模型 ${model.name}`);
+        // 初始化时不显示toast
+        testSelectedModel(model, false);
       } else {
         setModelError("API模型未配置密钥");
+        updateModelValidation(model.id, false);
       }
     } else {
       // 没有模型时的处理
@@ -95,7 +131,12 @@ export function ModelSelectorContainer({
       setModelError("请先添加模型");
       setIsModelReady(false);
     }
-  }, [getSelectedModel, testSelectedModel]);
+  }, [
+    getSelectedModel,
+    testSelectedModel,
+    shouldRevalidateModel,
+    updateModelValidation,
+  ]);
 
   // 处理模型选择变更
   const handleModelSelect = useCallback(
@@ -113,8 +154,23 @@ export function ModelSelectorContainer({
       // 保存选中的模型到localStorage
       selectModel(modelId);
 
-      // 测试模型是否可用
-      await testSelectedModel(selectedModel);
+      // 检查模型是否需要验证
+      if (selectedModel.isValidated && !shouldRevalidateModel(selectedModel)) {
+        console.log(`[切换模型] 模型 ${selectedModel.name} 已验证，直接使用`);
+        setIsModelReady(true);
+      } else {
+        console.log(`[切换模型] 模型 ${selectedModel.name} 需要验证`);
+        // 显示测试中的toast
+        const loadingToastId = toastService.loading(`正在测试模型...`, {
+          duration: Infinity
+        });
+        
+        // 测试模型是否可用
+        await testSelectedModel(selectedModel, true);
+        
+        // 关闭loading toast
+        toastService.dismiss(loadingToastId);
+      }
 
       // 调用父组件回调
       if (onModelChange) {
@@ -124,7 +180,13 @@ export function ModelSelectorContainer({
         onModelChange(selectedModel.modelId);
       }
     },
-    [allModels, selectModel, testSelectedModel, onModelChange]
+    [
+      allModels,
+      selectModel,
+      testSelectedModel,
+      onModelChange,
+      shouldRevalidateModel,
+    ]
   );
 
   return (
@@ -204,9 +266,11 @@ export function ModelSelectorContainer({
                             )}
                           >
                             <div className="flex items-center justify-between w-full">
-                              <span className="truncate max-w-[180px]">
-                                {model.name}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="truncate max-w-[140px]">
+                                  {model.name}
+                                </span>
+                              </div>
                             </div>
                           </SelectItem>
                         ))}
@@ -231,9 +295,14 @@ export function ModelSelectorContainer({
                             )}
                           >
                             <div className="flex items-center justify-between w-full">
-                              <span className="truncate max-w-[180px]">
-                                {model.name}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="truncate max-w-[140px]">
+                                  {model.name}
+                                </span>
+                                {model.isValidated && (
+                                  <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0" />
+                                )}
+                              </div>
                               <span className="text-xs text-gray-500 ml-2">
                                 {model.apiProvider}
                               </span>

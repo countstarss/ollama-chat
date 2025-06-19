@@ -1,9 +1,11 @@
+import { Metadata } from "next";
 import Models from "./components/Models";
 
-export default function ModelsPage() {
+export const metadata: Metadata = {
+  title: "模型设置",
+  description: "模型设置",
+};
 
-  // 如果后续需要进行服务端数据获取，从这里传入
-  return (
-    <Models />
-  );
+export default function ModelsPage() {
+  return <Models />;
 }

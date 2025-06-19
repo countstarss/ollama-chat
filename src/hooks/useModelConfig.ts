@@ -12,6 +12,8 @@ export interface ModelConfig {
   apiKey?: string; // API密钥
   apiEndpoint?: string; // API端点URL
   apiVersion?: string; // API版本
+  isValidated?: boolean; // 模型是否已通过验证
+  lastValidatedAt?: number; // 上次验证时间戳
 }
 
 // 本地存储键名
@@ -194,6 +196,49 @@ export function useModelConfig() {
     saveToLocalStorage(models, selectedModelId);
   }, [models, selectedModelId, saveToLocalStorage]);
 
+  // 更新模型验证状态
+  const updateModelValidation = useCallback(
+    (modelId: string, isValid: boolean) => {
+      const updatedModels = models.map((model) => {
+        if (model.id === modelId) {
+          // 更新当前模型的验证状态
+          return {
+            ...model,
+            isValidated: isValid,
+            lastValidatedAt: isValid ? Date.now() : undefined,
+          };
+        } else {
+          // 将其他模型的验证状态重置为false
+          return {
+            ...model,
+            isValidated: false,
+            lastValidatedAt: undefined,
+          };
+        }
+      });
+
+      setModels(updatedModels);
+      saveToLocalStorage(updatedModels, selectedModelId);
+      
+      console.log(`[ModelConfig] 更新模型验证状态: ${modelId} -> ${isValid}`);
+    },
+    [models, selectedModelId, saveToLocalStorage]
+  );
+
+  // 检查模型是否需要重新验证（例如：超过24小时）
+  const shouldRevalidateModel = useCallback((model: ModelConfig): boolean => {
+    if (!model.isValidated) return true;
+    if (!model.lastValidatedAt) return true;
+    
+    // 如果是API模型且没有密钥，需要重新验证
+    if (model.isApiModel && !model.apiKey) return true;
+    
+    // 检查是否超过24小时
+    const oneDay = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return (now - model.lastValidatedAt) > oneDay;
+  }, []);
+
   return {
     models,
     selectedModelId,
@@ -204,5 +249,7 @@ export function useModelConfig() {
     deleteModel,
     selectModel,
     forceLocalStorageSave, // 导出强制保存方法
+    updateModelValidation, // 导出更新验证状态方法
+    shouldRevalidateModel, // 导出检查是否需要重新验证的方法
   };
 }
