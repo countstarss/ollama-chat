@@ -54,18 +54,32 @@ export function useChatSession() {
 
   // MARK: NewChat
   // NOTE: 创建新聊天
-  const createNewChat = useCallback(() => {
+  const createNewChat = useCallback((initialMessages?: DisplayMessage[]) => {
     const newChatId = uuidv4();
     setCurrentChatId(newChatId);
-    setChatName("未命名");
-    setHasNamedCurrentChat(false);
+    
+    // 如果有初始消息，使用第一条用户消息作为聊天名称
+    let chatTitle = "未命名";
+    let hasNamed = false;
+    
+    if (initialMessages && initialMessages.length > 0) {
+      const firstUserMessage = initialMessages.find(m => m.role === "user");
+      if (firstUserMessage?.content) {
+        const content = firstUserMessage.content.trim();
+        chatTitle = content.length > 30 ? `${content.substring(0, 30)}...` : content;
+        hasNamed = true;
+      }
+    }
+    
+    setChatName(chatTitle);
+    setHasNamedCurrentChat(hasNamed);
 
-    // 创建新的空聊天会话并立即保存
+    // 创建新的聊天会话并立即保存
     const newChat: ChatSession = {
       id: newChatId,
-      name: "未命名",
+      name: chatTitle,
       lastUpdated: Date.now(),
-      messages: [],
+      messages: initialMessages || [],
     };
 
     // 保存到数据库

@@ -15,6 +15,7 @@ import { useFloatingSidebar } from "@/components/context/floating-sidebar-contex
 import { StarButton } from "../button/StarButton";
 import { useSelectionStore } from "@/store/useSelectionStore";
 import { CheckCircle2 } from "lucide-react";
+import { LoadingDots } from "../ui/LoadingDots";
 
 // 扩展消息类型以包含思考过程
 export interface DisplayMessage extends ChatMessageType {
@@ -294,12 +295,16 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
 
           {/* 主要内容部分 (使用 Markdown 渲染) */}
-          <ReactMarkdown
-            components={markdownComponents}
-            remarkPlugins={[remarkGfm]}
-          >
-            {contentToDisplay}
-          </ReactMarkdown>
+          {isAssistant && !contentToDisplay && !message.isThinkingComplete ? (
+            <LoadingDots className="text-gray-600 dark:text-gray-400" />
+          ) : (
+            <ReactMarkdown
+              components={markdownComponents}
+              remarkPlugins={[remarkGfm]}
+            >
+              {contentToDisplay}
+            </ReactMarkdown>
+          )}
 
           {/* RAG 来源信息 */}
           {message.isRagMessage &&

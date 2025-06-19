@@ -65,6 +65,7 @@ export default function Chat({
     saveCurrentChat,
     renameChat,
     refreshRecentChats,
+    createNewChat,
   } = useChatSession();
 
   // 追踪消息数量和生成状态
@@ -330,6 +331,8 @@ export default function Chat({
     searchParams,
     saveCurrentChat,
     isStreamCompletedRef,
+    currentChatId,
+    createNewChat: mode === "chat" ? createNewChat : undefined,
   });
 
   // MARK: 处理发送消息

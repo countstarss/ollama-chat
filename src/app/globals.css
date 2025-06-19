@@ -338,3 +338,13 @@
     animation: highlightPulseDark 2s ease-in-out;
   }
 }
+
+/* Loading dots animation */
+@keyframes loading-dot {
+  0%, 80%, 100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}

@@ -38,6 +38,10 @@ interface ChatMessageParams {
   ) => void | Promise<void>;
   /** 引用自 Chat 组件，用于告知流是否结束 */
   isStreamCompletedRef: RefObject<boolean>;
+  /** 当前聊天ID */
+  currentChatId: string | null;
+  /** 创建新聊天的函数 */
+  createNewChat?: (initialMessages?: DisplayMessage[]) => string;
 }
 
 export function useChatMessage({
@@ -56,6 +60,8 @@ export function useChatMessage({
   searchParams,
   saveCurrentChat,
   isStreamCompletedRef,
+  currentChatId,
+  createNewChat,
 }: ChatMessageParams) {
   const handleChatMessage = useCallback(
     async (userInput: string) => {
@@ -71,15 +77,22 @@ export function useChatMessage({
         }`
       );
 
+      // 创建用户消息
+      const userMessage: DisplayMessage = {
+        id: uuidv4(),
+        role: "user" as const,
+        content: userInput,
+      };
+
+      // 如果没有chatId，先创建新聊天
+      if (!currentChatId && createNewChat) {
+        console.log("[发送消息] 没有chatId，创建新聊天");
+        const newChatId = createNewChat([userMessage]);
+        console.log(`[发送消息] 新聊天已创建: ${newChatId}`);
+      }
+
       // MARK: 添加用户消息
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: uuidv4(),
-          role: "user" as const,
-          content: userInput,
-        },
-      ]);
+      setMessages((prev) => [...prev, userMessage]);
 
       setIsLoading(true);
       // 重置流完成标志
@@ -93,9 +106,12 @@ export function useChatMessage({
         return;
       }
 
+      // 创建包含新消息的消息数组，用于请求
+      const messagesWithNewMessage = [...messages, userMessage];
+      
       const requestBody = prepareRequestBody(
         userInput,
-        messages,
+        messagesWithNewMessage,
         selectedModel,
         modelSettings
       );
@@ -169,6 +185,8 @@ export function useChatMessage({
       searchParams,
       saveCurrentChat,
       messages,
+      currentChatId,
+      createNewChat,
       modelSettings,
       createAbortController,
     ]
