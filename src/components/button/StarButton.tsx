@@ -36,6 +36,7 @@ export function StarButton({
   // 使用Zustand store
   const {
     addStar,
+    removeStar,
     isStarred: checkIsStarred,
     refreshStarredMessages,
   } = useStarStore();
@@ -59,41 +60,54 @@ export function StarButton({
 
     setIsStarring(true);
     try {
-      // 使用消息对象或创建一个简单的消息对象
-      let messageToStar = message || {
-        id: `star-${Date.now()}`, // 生成一个唯一ID
-        role: "assistant",
-        content: text,
-      };
+      // 如果已经收藏，则取消收藏
+      if (localIsStarred && message && message.id) {
+        console.log("[收藏按钮] 准备取消收藏消息:", message.id);
+        const result = await removeStar(message.id);
+        if (result) {
+          setLocalIsStarred(false);
+          setIsStarred(false);
+          // 刷新收藏列表
+          refreshStarredMessages();
+        }
+      } else {
+        // 否则添加收藏
+        // 使用消息对象或创建一个简单的消息对象
+        let messageToStar = message || {
+          id: `star-${Date.now()}`, // 生成一个唯一ID
+          role: "assistant",
+          content: text,
+        };
 
-      // 如果是现有消息，创建一个新对象以避免修改原始消息
-      if (message) {
-        messageToStar = { ...message };
-      }
+        // 如果是现有消息，创建一个新对象以避免修改原始消息
+        if (message) {
+          messageToStar = { ...message };
+        }
 
-      // 添加chatId字段
-      if (currentChatId && !messageToStar.chatId) {
-        messageToStar.chatId = currentChatId;
-      }
+        // 添加chatId字段
+        if (currentChatId && !messageToStar.chatId) {
+          messageToStar.chatId = currentChatId;
+        }
 
-      // 添加或覆盖libraryId字段
-      // 优先使用消息自带的libraryId，如果没有则使用currentLibraryId
-      messageToStar.libraryId = messageToStar.libraryId || currentLibraryId;
+        // 添加或覆盖libraryId字段
+        // 优先使用消息自带的libraryId，如果没有则使用currentLibraryId
+        messageToStar.libraryId = messageToStar.libraryId || currentLibraryId;
 
-      // 调试日志
-      console.log("[收藏按钮] 准备收藏消息:", {
-        id: messageToStar.id,
-        libraryId: messageToStar.libraryId,
-        isRag,
-        currentLibraryId,
-      });
+        // 调试日志
+        console.log("[收藏按钮] 准备收藏消息:", {
+          id: messageToStar.id,
+          libraryId: messageToStar.libraryId,
+          isRag,
+          currentLibraryId,
+        });
 
-      const result = await addStar(messageToStar);
-      if (result) {
-        setLocalIsStarred(true);
-        setIsStarred(true);
-        // 刷新收藏列表
-        refreshStarredMessages();
+        const result = await addStar(messageToStar);
+        if (result) {
+          setLocalIsStarred(true);
+          setIsStarred(true);
+          // 刷新收藏列表
+          refreshStarredMessages();
+        }
       }
     } finally {
       setIsStarring(false);
@@ -130,7 +144,7 @@ export function StarButton({
         starredStyles,
         className
       )}
-      title={localIsStarred ? "已收藏" : "收藏内容"}
+      title={localIsStarred ? "取消收藏" : "收藏内容"}
       type="button"
       disabled={isStarring}
     >
