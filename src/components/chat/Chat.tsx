@@ -28,6 +28,7 @@ import { useSearchParams } from "next/navigation";
 import { useRagMessage } from "@/hooks/useRagMessage";
 import { useLibrarySession } from "@/hooks/useLibrarySession";
 import { useChatMessage } from "@/hooks/useChatMessage";
+import { FileUploadToggle } from "./FileUploadToggle";
 
 interface ChatProps {
   mode?: "chat" | "rag";
@@ -349,15 +350,17 @@ export default function Chat({
   const handleModelChange = useCallback((modelId: string) => {
     // 先将就绪状态设为false，直到确认模型可用
     setIsModelReady(false);
-    
+
     // 从模型配置中获取完整的模型信息
     const { models } = useModelConfig();
-    const selectedModelConfig = models.find(m => m.modelId === modelId);
-    
+    const selectedModelConfig = models.find((m) => m.modelId === modelId);
+
     if (selectedModelConfig) {
       setSelectedModel(selectedModelConfig);
       setModelError(null);
-      console.log(`[Chat] 选择模型: ${selectedModelConfig.name} (${selectedModelConfig.modelId})`);
+      console.log(
+        `[Chat] 选择模型: ${selectedModelConfig.name} (${selectedModelConfig.modelId})`
+      );
     } else {
       // 如果找不到配置，创建一个临时的模型配置对象
       const tempModel: ModelConfig = {
@@ -370,7 +373,7 @@ export default function Chat({
       setModelError(null);
       console.log(`[Chat] 使用临时模型配置: ${modelId}`);
     }
-    
+
     // ModelSelectorContainer会进行模型测试并更新就绪状态
   }, []);
 
@@ -420,6 +423,7 @@ export default function Chat({
               <ModelSettingsButton isLoading={isLoading} />
             </>
           )}
+          {mode === "rag" && <FileUploadToggle />}
 
           <SelectionModeToggle />
 

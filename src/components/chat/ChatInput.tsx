@@ -50,7 +50,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-[80%] max-w-4xl mx-auto rounded-2xl p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
+      className="w-[80%] max-w-4xl mx-auto rounded-3xl p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:scale-[1.02] transition-all duration-300 shadow-md"
     >
       <div className="flex items-center space-x-2">
         <textarea
@@ -59,7 +59,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder=""
-          className="text-base flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 min-h-[40px] max-h-[200px] px-8"
+          className="text-base flex-grow p-2 border-none outline-none
+          dark:border-gray-600 rounded-xl resize-none  
+          dark:bg-gray-700 min-h-[40px] max-h-[200px] px-8"
           rows={1}
           disabled={isLoading}
         />

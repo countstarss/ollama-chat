@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Chat from "@/components/chat/Chat";
 import { UploadArea } from "@/components/doc/UploadArea";
 import { useUploadPanelStore } from "@/store/useUploadPanelStore";
-import { ChevronLeftIcon, ChevronRightIcon, Pin } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, FileText, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LibraryPage() {
@@ -43,18 +43,14 @@ export default function LibraryPage() {
           </button>
         </div>
         <UploadArea libraryId={libraryId} />
-        <div className="absolute top-1/2 -translate-y-1/2 -right-8 w-8 flex items-center justify-center">
+        <div className="absolute top-1/2 -translate-y-1/2 -right-10 w-8 flex items-center justify-center">
           <button
             onClick={isOpen ? close : open}
             className="p-1 hover:text-gray-500 rounded"
           >
-            {isOpen ? (
+            {isOpen && (
               <>
                 <ChevronLeftIcon className="h-8 w-8" />
-              </>
-            ) : (
-              <>
-                <ChevronRightIcon className="h-8 w-8" />
               </>
             )}
           </button>
